@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- ✅ Primary Meta Tags -->
+    <title>برنامه‌ریزی هوشمند | Smart Planner</title>
+    <meta name="title" content="برنامه‌ریزی هوشمند | Smart Planner" />
+    <meta name="description" content="پلتفرم برنامه‌ریزی، مدیریت زمان و بهره‌وری هوشمند با تحلیل‌های پیشرفته" />
+    <meta name="keywords" content="برنامه‌ریزی, مدیریت زمان, بهره‌وری, پومودورو, پروژه, کارها, task management, productivity, planner" />
+    <meta name="author" content="Smart Planner Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- ✅ Theme Color -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b82f6" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e40af" />
+    <meta name="color-scheme" content="light dark" />
+    
+    <!-- ✅ Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://smartplanner.app/" />
+    <meta property="og:title" content="برنامه‌ریزی هوشمند | Smart Planner" />
+    <meta property="og:description" content="پلتفرم برنامه‌ریزی، مدیریت زمان و بهره‌وری هوشمند" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:locale" content="fa_IR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    
+    <!-- ✅ Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://smartplanner.app/" />
+    <meta property="twitter:title" content="برنامه‌ریزی هوشمند | Smart Planner" />
+    <meta property="twitter:description" content="پلتفرم برنامه‌ریزی، مدیریت زمان و بهره‌وری هوشمند" />
+    <meta property="twitter:image" content="/og-image.png" />
+    
+    <!-- ✅ PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- ✅ Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- ✅ Apple Touch Icon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3b82f6" />
+    
+    <!-- ✅ Apple PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SmartPlanner" />
+    
+    <!-- ✅ Microsoft -->
+    <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- ✅ Preconnect (Performance) -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- ✅ Fonts -->
+    <link 
+      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" 
+      rel="stylesheet"
+    />
+    <link 
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" 
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- ✅ Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('✅ ServiceWorker registered:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('❌ ServiceWorker registration failed:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

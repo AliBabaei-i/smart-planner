@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Cache
+.cache/
+.parcel-cache/
+node_modules/.cache/
+
+# Testing
+coverage/
+.nyc_output/
+
+# PWA Generated (icons are regenerated)
+public/icon-*.png
+public/icon-maskable-*.png
+public/apple-touch-icon.png
+public/favicon-*.png
+public/og-image.png
+
+# Misc
+*.log
+.eslintcache

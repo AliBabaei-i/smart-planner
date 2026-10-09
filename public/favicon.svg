@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#f0f9ff" stop-opacity="1"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="120" cy="120" r="60" fill="white" opacity="0.08"/>
+  <circle cx="420" cy="420" r="80" fill="white" opacity="0.08"/>
+  <circle cx="400" cy="100" r="40" fill="white" opacity="0.06"/>
+  
+  <!-- Checkmark (main symbol) -->
+  <g filter="url(#shadow)">
+    <!-- Checkmark path -->
+    <path 
+      d="M 130 260 L 220 350 L 390 180" 
+      stroke="white" 
+      stroke-width="48" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+      fill="none"
+    />
+    <!-- Small dot decoration -->
+    <circle cx="400" cy="170" r="16" fill="white"/>
+    <circle cx="410" cy="185" r="8" fill="white" opacity="0.7"/>
+  </g>
+  
+  <!-- Top small dot (like a reminder indicator) -->
+  <circle cx="256" cy="100" r="24" fill="white" opacity="0.95"/>
+  <circle cx="256" cy="100" r="12" fill="#3b82f6"/>
+  
+  <!-- Bottom label lines (representing list) -->
+  <rect x="160" y="410" width="192" height="12" rx="6" fill="white" opacity="0.9"/>
+  <rect x="200" y="440" width="112" height="12" rx="6" fill="white" opacity="0.6"/>
+</svg>

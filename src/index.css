@@ -1,0 +1,342 @@
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   ✅ متغیرهای رنگ و اسکرول‌بار
+   ============================================ */
+:root {
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e0;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+.dark {
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
+}
+
+/* ============================================
+   ✅ جهت و پایه
+   ============================================ */
+html[dir="rtl"] { direction: rtl; }
+html[dir="ltr"] { direction: ltr; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+html[dir="ltr"] body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================
+   ✅ فونت - همه المان‌ها (به‌جز SVG)
+   ============================================ */
+html[dir="rtl"] *:not(svg):not(path):not(rect):not(circle):not(polyline):not(line):not(g),
+html[dir="rtl"] *::before,
+html[dir="rtl"] *::after,
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea,
+html[dir="rtl"] button,
+html[dir="rtl"] option,
+html[dir="rtl"] optgroup,
+html[dir="rtl"] label {
+  font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif !important;
+}
+
+html[dir="ltr"] *:not(svg):not(path):not(rect):not(circle):not(polyline):not(line):not(g),
+html[dir="ltr"] *::before,
+html[dir="ltr"] *::after,
+html[dir="ltr"] input,
+html[dir="ltr"] select,
+html[dir="ltr"] textarea,
+html[dir="ltr"] button,
+html[dir="ltr"] option,
+html[dir="ltr"] optgroup,
+html[dir="ltr"] label {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* ============================================
+   ✅ Number Input - حذف استایل پیش‌فرض
+   ============================================ */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ============================================
+   ✅ Date & Time Inputs
+   ============================================ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+  font-family: inherit !important;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="week"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* ============================================
+   ✅ Select - حذف کامل استایل پیش‌فرض
+   ============================================ */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+  cursor: pointer;
+  font-family: inherit !important;
+}
+
+/* برای Firefox */
+select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #000;
+}
+
+/* ============================================
+   ✅ اسکرول‌بار سراسری
+   ============================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+  border: 2px solid var(--scrollbar-track);
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+/* ============================================
+   ✅ دسترسی
+   ============================================ */
+.high-contrast { filter: contrast(1.2); }
+.large-text { font-size: 18px; }
+.large-text body { font-size: 18px; }
+
+/* ============================================
+   ✅ انیمیشن‌ها
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-slide-down { animation: slideDown 0.5s ease-out; }
+.animate-slide-right { animation: slideRight 0.3s ease-out; }
+.animate-bounce-slow { animation: bounceSlow 2s infinite; }
+
+/* ============================================
+   ✅ Toastify
+   ============================================ */
+.Toastify__toast {
+  font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif !important;
+}
+
+html[dir="rtl"] .Toastify__toast {
+  direction: rtl !important;
+}
+
+html[dir="ltr"] .Toastify__toast {
+  direction: ltr !important;
+}
+
+html[dir="rtl"] .Toastify__toast-container--bottom-left {
+  left: auto !important;
+  right: 16px !important;
+  bottom: 16px !important;
+}
+
+html[dir="ltr"] .Toastify__toast-container--bottom-left {
+  left: 16px !important;
+  right: auto !important;
+  bottom: 16px !important;
+}
+
+/* ============================================
+   ✅ Dark Mode
+   ============================================ */
+.dark {
+  color-scheme: dark;
+}
+
+/* ============================================
+   ✅ Safe Area
+   ============================================ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ============================================
+   ✅ اعداد فارسی
+   ============================================ */
+.persian-numbers {
+  font-feature-settings: 'ss01';
+}
+
+/* ============================================
+   ✅ Kanban
+   ============================================ */
+.kanban-card {
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-column.drag-over {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+/* ============================================
+   ✅ موبایل
+   ============================================ */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (hover: none) {
+  .hover\:shadow-lg:hover {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+button,
+[role="button"] {
+  min-height: 32px;
+  min-width: 32px;
+}
+
+@media (max-width: 640px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.125rem; }
+}

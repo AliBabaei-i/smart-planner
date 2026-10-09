@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>برنامه‌ریزی هوشمند - آفلاین</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      color: white;
+      direction: rtl;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 3rem 2rem;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .icon {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+      animation: float 3s ease-in-out infinite;
+      display: inline-block;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+    
+    p {
+      font-size: 1rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    
+    .features {
+      text-align: right;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      font-size: 0.875rem;
+    }
+    
+    .features-title {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+    
+    .features ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .features li {
+      opacity: 0.9;
+    }
+    
+    .button {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      width: 100%;
+    }
+    
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .status {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>شما آفلاین هستید</h1>
+    <p>
+      در حال حاضر به اینترنت متصل نیستید. نگران نباشید - داده‌های شما محفوظ است.
+    </p>
+    
+    <div class="features">
+      <span class="features-title">✨ در حالت آفلاین می‌توانید:</span>
+      <ul>
+        <li>✓ مشاهده پروژه‌ها و کارها</li>
+        <li>✓ ایجاد و ویرایش تسک‌های جدید</li>
+        <li>✓ استفاده از تایمر پومودورو</li>
+        <li>✓ مشاهده تحلیل‌ها و آمار</li>
+      </ul>
+    </div>
+    
+    <button class="button" onclick="window.location.reload()">
+      🔄 تلاش مجدد
+    </button>
+    
+    <div class="status">
+      <span class="status-dot"></span>
+      <span>در انتظار اتصال...</span>
+    </div>
+  </div>
+  
+  <script>
+    // ✅ چک کردن اتصال هر ۵ ثانیه
+    setInterval(() => {
+      if (navigator.onLine) {
+        window.location.reload()
+      }
+    }, 5000)
+    
+    // ✅ اگر آنلاین شد، خودکار reload
+    window.addEventListener('online', () => {
+      window.location.reload()
+    })
+  </script>
+</body>
+</html>

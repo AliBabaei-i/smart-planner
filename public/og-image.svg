@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="overlay" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  <rect width="1200" height="630" fill="url(#overlay)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="white" opacity="0.05"/>
+  <circle cx="1100" cy="530" r="250" fill="white" opacity="0.05"/>
+  <circle cx="600" cy="315" r="400" fill="white" opacity="0.03"/>
+  
+  <!-- Icon on right (RTL) -->
+  <g transform="translate(920, 315)">
+    <circle cx="0" cy="0" r="120" fill="white" opacity="0.15"/>
+    <path 
+      d="M -60 0 L -20 45 L 60 -50" 
+      stroke="white" 
+      stroke-width="24" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+      fill="none"
+    />
+  </g>
+  
+  <!-- Text on left (RTL - starts from right) -->
+  <g fill="white">
+    <text x="800" y="260" font-family="Vazirmatn, sans-serif" font-size="72" font-weight="700" text-anchor="end">
+      برنامه‌ریزی هوشمند
+    </text>
+    <text x="800" y="340" font-family="Inter, sans-serif" font-size="44" font-weight="500" text-anchor="end" opacity="0.95">
+      Smart Planner
+    </text>
+    <text x="800" y="420" font-family="Vazirmatn, sans-serif" font-size="28" font-weight="400" text-anchor="end" opacity="0.85">
+      مدیریت زمان و بهره‌وری هوشمند
+    </text>
+    <text x="800" y="465" font-family="Inter, sans-serif" font-size="22" font-weight="400" text-anchor="end" opacity="0.75">
+      Task Management & Productivity
+    </text>
+  </g>
+  
+  <!-- Bottom accent bar -->
+  <rect x="0" y="600" width="1200" height="30" fill="white" opacity="0.2"/>
+</svg>
