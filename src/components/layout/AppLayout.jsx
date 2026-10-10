@@ -3,7 +3,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 
-const AppLayout = ({ children, onOpenSearch }) => {
+const AppLayout = ({ children, onOpenSearch, onOpenQuickAdd }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -11,12 +11,12 @@ const AppLayout = ({ children, onOpenSearch }) => {
       <div className="flex-shrink-0">
         <Header 
           onOpenSearch={onOpenSearch} 
+          onOpenQuickAdd={onOpenQuickAdd}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
       </div>
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - در RTL راست، در LTR چپ (خودکار با dir) */}
         <div className="hidden md:block flex-shrink-0 border-e border-gray-200 dark:border-gray-700">
           <Sidebar />
         </div>
@@ -27,7 +27,7 @@ const AppLayout = ({ children, onOpenSearch }) => {
               className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 animate-fade-in"
               onClick={() => setSidebarOpen(false)}
             ></div>
-            <div className="md:hidden fixed top-16 bottom-0 z-50 animate-slide-in">
+            <div className="md:hidden fixed top-16 bottom-0 end-0 z-50 animate-slide-in">
               <Sidebar onItemClick={() => setSidebarOpen(false)} />
             </div>
           </>
@@ -40,7 +40,7 @@ const AppLayout = ({ children, onOpenSearch }) => {
         </main>
       </div>
 
-      <MobileBottomNav />
+      <MobileBottomNav onOpenQuickAdd={onOpenQuickAdd} />
     </div>
   )
 }

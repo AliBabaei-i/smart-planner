@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { FiAward, FiStar, FiX } from 'react-icons/fi'
@@ -10,8 +10,9 @@ const AchievementNotification = () => {
   const { newlyUnlocked = [] } = useSelector(state => state.achievements)
   const [currentAchievement, setCurrentAchievement] = useState(null)
   const [currentId, setCurrentId] = useState(null)
+  const timerRef = useRef(null)
 
-  // ✅ نمایش یک دستاورد در هر لحظه
+  // ✅ نمایش اعلان (بدون cancel شدن تایمر توسط re-render)
   useEffect(() => {
     if (newlyUnlocked.length > 0 && !currentAchievement) {
       const achievementId = newlyUnlocked[0]
@@ -21,20 +22,36 @@ const AchievementNotification = () => {
         setCurrentAchievement(achievement)
         setCurrentId(achievementId)
         
-        // ✅ بعد از ۵ ثانیه، این یکی رو حذف کن (نه همه)
-        const timer = setTimeout(() => {
+        // ✅ پاک کردن تایمر قبلی اگه هست
+        if (timerRef.current) {
+          clearTimeout(timerRef.current)
+        }
+        
+        // ✅ تایمر جدید - 10 ثانیه
+        timerRef.current = setTimeout(() => {
           dispatch(removeOneNewlyUnlocked(achievementId))
           setCurrentAchievement(null)
           setCurrentId(null)
-        }, 5000)
-        
-        return () => clearTimeout(timer)
+          timerRef.current = null
+        }, 10000)
       }
     }
   }, [newlyUnlocked, currentAchievement, dispatch])
 
-  // ✅ بستن دستی
+  // ✅ پاک‌سازی تایمر هنگام unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [])
+
   const handleClose = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
     if (currentId) {
       dispatch(removeOneNewlyUnlocked(currentId))
       setCurrentAchievement(null)
@@ -48,7 +65,6 @@ const AchievementNotification = () => {
     <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[150] animate-slide-down">
       <div className="bg-gradient-to-l from-yellow-400 via-yellow-500 to-orange-500 rounded-2xl shadow-2xl p-1 max-w-sm">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 flex items-center gap-3 relative">
-          {/* دکمه بستن */}
           <button
             onClick={handleClose}
             className="absolute top-2 end-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"

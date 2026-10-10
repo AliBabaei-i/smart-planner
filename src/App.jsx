@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { Provider, useDispatch } from 'react-redux'
 import { ToastContainer } from 'react-toastify'
 import store from './app/store'
@@ -7,6 +7,8 @@ import AppLayout from './components/layout/AppLayout'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import GlobalSearch from './components/common/GlobalSearch'
+import QuickAddTask from './components/ui/QuickAddTask'
+import FloatingQuickAdd from './components/ui/FloatingQuickAdd'
 import LoadingSpinner from './components/common/LoadingSpinner'
 import PomodoroWidget from './features/pomodoro/PomodoroWidget'
 import AchievementNotification from './features/achievements/AchievementNotification'
@@ -16,7 +18,6 @@ import { initializeTheme } from './features/theme/themeSlice'
 
 import 'react-toastify/dist/ReactToastify.css'
 
-// ✅ Lazy loading صفحات
 const Dashboard = lazy(() => import('./features/dashboard/Dashboard'))
 const ProjectsPage = lazy(() => import('./features/projects/ProjectsPage'))
 const TasksPage = lazy(() => import('./features/tasks/TasksPage'))
@@ -30,19 +31,10 @@ const AchievementsPage = lazy(() => import('./features/achievements/Achievements
 function NotFound() {
   return (
     <div className="text-center py-12">
-      <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-        <span className="text-4xl">🔍</span>
-      </div>
       <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
         صفحه پیدا نشد
       </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
-        صفحه‌ای که به دنبال آن هستید وجود ندارد
-      </p>
-      <a
-        href="/"
-        className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
+      <a href="/" className="text-blue-600 hover:underline">
         بازگشت به داشبورد
       </a>
     </div>
@@ -51,30 +43,23 @@ function NotFound() {
 
 function AppContent() {
   const dispatch = useDispatch()
+  const location = useLocation()
   const [showSearch, setShowSearch] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
 
-  // ✅ اعمال تم در ابتدای لود
   useEffect(() => {
     initializeTheme()
   }, [])
 
-  // ✅ راه‌اندازی سرویس یادآوری
   useEffect(() => {
     if (reminderService.started) return
-
     try {
       reminderService.start()
     } catch (error) {
       console.error('Error starting reminder service:', error)
     }
-
-    return () => {
-      // ✅ در StrictMode نباید stop کنیم تا دوباره اجرا نشه
-      // reminderService.stop()
-    }
   }, [])
 
-  // ✅ بررسی و ساخت تسک‌های تکرارشونده
   useEffect(() => {
     dispatch(generateRecurringTasks())
     const interval = setInterval(() => {
@@ -83,38 +68,55 @@ function AppContent() {
     return () => clearInterval(interval)
   }, [dispatch])
 
-  // ✅ شورتکات‌های کیبورد
+  // ✅ وقتی کاربر وارد TasksPage میشه، زمان بازدید رو ذخیره کن
+  useEffect(() => {
+    if (location.pathname === '/tasks') {
+      localStorage.setItem('smart-planner-tasks-viewed-at', new Date().toISOString())
+    }
+  }, [location.pathname])
+
+  // ✅ شورتکات‌های کیبورد (با e.code برای پشتیبانی کامل)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.key === 'k' || e.key === 'K' || e.code === 'KeyK')
-      ) {
+      const target = e.target
+      const tagName = target?.tagName?.toLowerCase()
+      const isContentEditable = target?.isContentEditable
+      const isInInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select' || isContentEditable
+
+      // Ctrl+K یا Cmd+K → جستجو
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyK') {
         e.preventDefault()
-        e.stopPropagation()
         setShowSearch(prev => !prev)
-        return false
+        return
       }
 
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const target = e.target
-        const tagName = target?.tagName?.toLowerCase()
-        const isContentEditable = target?.isContentEditable
+      if (isInInput) return
 
-        if (tagName !== 'input' && tagName !== 'textarea' && !isContentEditable) {
-          e.preventDefault()
-          setShowSearch(true)
-        }
+      // "/" → جستجو
+      if (e.code === 'Slash') {
+        e.preventDefault()
+        setShowSearch(true)
+        return
+      }
+
+      // "N" → Quick Add (با e.code)
+      if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setShowQuickAdd(true)
+        return
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown, true)
-    return () => document.removeEventListener('keydown', handleKeyDown, true)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   return (
-    <Router>
-      <AppLayout onOpenSearch={() => setShowSearch(true)}>
+    <React.Fragment>
+      <AppLayout 
+        onOpenSearch={() => setShowSearch(true)}
+        onOpenQuickAdd={() => setShowQuickAdd(true)}
+      >
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-[60vh]">
             <LoadingSpinner size="large" />
@@ -135,10 +137,17 @@ function AppContent() {
         </Suspense>
       </AppLayout>
 
-      <GlobalSearch
-        isOpen={showSearch}
-        onClose={() => setShowSearch(false)}
+      <GlobalSearch 
+        isOpen={showSearch} 
+        onClose={() => setShowSearch(false)} 
       />
+
+      <QuickAddTask 
+        isOpen={showQuickAdd} 
+        onClose={() => setShowQuickAdd(false)} 
+      />
+
+      <FloatingQuickAdd onClick={() => setShowQuickAdd(true)} />
 
       <PomodoroWidget />
       <AchievementNotification />
@@ -157,7 +166,7 @@ function AppContent() {
         theme="light"
         style={{ direction: 'rtl' }}
       />
-    </Router>
+    </React.Fragment>
   )
 }
 
@@ -165,7 +174,9 @@ function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <AppContent />
+        <Router>
+          <AppContent />
+        </Router>
       </Provider>
     </ErrorBoundary>
   )

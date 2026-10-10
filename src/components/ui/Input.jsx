@@ -1,12 +1,12 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 
-const Input = ({
+const Input = forwardRef(({
   label,
   error,
   className = '',
   type = 'text',
   ...props
-}) => {
+}, ref) => {
   return (
     <div className="w-full">
       {label && (
@@ -15,6 +15,7 @@ const Input = ({
         </label>
       )}
       <input
+        ref={ref}
         type={type}
         className={`
           w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm
@@ -34,6 +35,8 @@ const Input = ({
       )}
     </div>
   )
-}
+})
+
+Input.displayName = 'Input'
 
 export default Input
