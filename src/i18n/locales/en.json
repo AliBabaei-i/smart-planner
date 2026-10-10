@@ -44,7 +44,8 @@
     "clear": "Clear",
     "apply": "Apply",
     "more": "more",
-    "less": "less"
+      "less": "less",
+  "quickAdd": "Quick Add"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -779,5 +780,6 @@
   "copied": "Text copied"
 },
 "items": "items",
-"tags": "tags"
+"tags": "tags","quickAdd": "Quick Add",
+"quickAddHint": "Press N for quick add"
 }

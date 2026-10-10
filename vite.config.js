@@ -7,12 +7,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-    }
+    },
+    // ✅ فقط react و react-dom رو dedupe کن
+    dedupe: ['react', 'react-dom']
   },
   server: {
     port: 5173,
     open: true,
-    host: true,  // ✅ در دسترس روی شبکه محلی
+    host: true,
     strictPort: false,
   },
   preview: {

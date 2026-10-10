@@ -22,17 +22,26 @@ const Sidebar = ({ onItemClick }) => {
 
   const isRTL = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  const today = new Date().toDateString()
-  const pendingTodayCount = tasks.filter(t => 
-    !t.completed && 
-    t.dueDate && 
-    new Date(t.dueDate).toDateString() === today
-  ).length
+  // ✅ Badge: کارهای جدید (بعد از آخرین بازدید TasksPage)
+  const lastViewedAt = localStorage.getItem('smart-planner-tasks-viewed-at')
+  const newTasksCount = tasks.filter(t => {
+    if (t.completed) return false
+    if (!lastViewedAt) return true
+    return new Date(t.createdAt) > new Date(lastViewedAt)
+  }).length
+
+  // ✅ اگه در حال حاضر توی TasksPage هستیم، badge رو نشون نده
+  const showBadge = location.pathname !== '/tasks'
 
   const menuItems = [
     { path: '/', label: t('nav.dashboard'), Icon: FiHome },
     { path: '/projects', label: t('nav.projects'), Icon: FiFolder },
-    { path: '/tasks', label: t('nav.tasks'), Icon: FiCheckSquare, badge: pendingTodayCount },
+    { 
+      path: '/tasks', 
+      label: t('nav.tasks'), 
+      Icon: FiCheckSquare, 
+      badge: showBadge ? newTasksCount : 0 
+    },
     { path: '/habits', label: t('nav.habits'), Icon: FiActivity },
     { path: '/notes', label: t('nav.notes'), Icon: FiEdit3 },
     { path: '/planning', label: t('nav.planning'), Icon: FiCalendar },
