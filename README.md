@@ -160,78 +160,81 @@ Smart Planner یک اپلیکیشن تحت وب کاملاً آفلاین و Pro
 
 ## 📁 ساختار پروژه
 smart-planner/
-├── public/ # فایل‌های استاتیک
-│ ├── manifest.json # PWA Manifest
-│ ├── sw.js # Service Worker
-│ ├── offline.html # صفحه آفلاین
-│ ├── favicon.svg # Favicon
-│ ├── icon.svg # آیکون اصلی
-│ ├── icon-maskable.svg # آیکون Maskable
-│ ├── og-image.svg # تصویر OG
-│ └── icon-*.png # آیکون‌های PWA
+├── public/                          # فایل‌های استاتیک
+│   ├── manifest.json                # PWA Manifest
+│   ├── sw.js                        # Service Worker
+│   ├── offline.html                 # صفحه آفلاین
+│   ├── favicon.svg                  # Favicon
+│   ├── icon.svg                     # آیکون اصلی
+│   ├── icon-maskable.svg            # آیکون Maskable
+│   ├── og-image.svg                 # تصویر OG
+│   └── icon-*.png                   # آیکون‌های PWA
 │
 ├── src/
-│ ├── app/
-│ │ └── store.js # Redux Store
-│ │
-│ ├── components/
-│ │ ├── common/ # کامپوننت‌های مشترک
-│ │ │ ├── ErrorBoundary.jsx
-│ │ │ ├── GlobalSearch.jsx
-│ │ │ ├── LanguageSwitcher.jsx
-│ │ │ ├── LoadingSpinner.jsx
-│ │ │ └── OfflineIndicator.jsx
-│ │ ├── layout/ # چیدمان
-│ │ │ ├── AppLayout.jsx
-│ │ │ ├── Header.jsx
-│ │ │ ├── Sidebar.jsx
-│ │ │ └── MobileBottomNav.jsx
-│ │ └── ui/ # کامپوننت‌های پایه
-│ │ ├── Button.jsx
-│ │ ├── Card.jsx
-│ │ ├── ConfirmDialog.jsx
-│ │ ├── CustomSelect.jsx
-│ │ ├── Input.jsx
-│ │ ├── Modal.jsx
-│ │ └── FormSelect.jsx
-│ │
-│ ├── features/ # ویژگی‌ها
-│ │ ├── achievements/ # دستاوردها
-│ │ ├── analytics/ # تحلیل‌ها
-│ │ ├── dashboard/ # داشبورد
-│ │ │ └── widgets/ # ویجت‌ها
-│ │ ├── habits/ # عادت‌ها
-│ │ ├── notes/ # یادداشت‌ها
-│ │ ├── notifications/ # اعلان‌ها
-│ │ ├── planning/ # برنامه‌ریزی
-│ │ ├── pomodoro/ # پومودورو
-│ │ ├── projects/ # پروژه‌ها
-│ │ ├── settings/ # تنظیمات
-│ │ ├── tasks/ # کارها
-│ │ ├── theme/ # ظاهر
-│ │ └── tracking/ # تایم‌ترکینگ
-│ │
-│ ├── hooks/ # Custom Hooks
-│ ├── i18n/ # بین‌المللی‌سازی
-│ │ ├── config.js
-│ │ └── locales/
-│ │ ├── fa.json # ترجمه فارسی
-│ │ └── en.json # ترجمه انگلیسی
-│ │
-│ ├── services/ # سرویس‌ها
-│ │ ├── exportService.js
-│ │ └── reminderService.js
-│ │
-│ ├── utils/ # ابزارها
-│ │ ├── dataExport.js
-│ │ ├── dateHelpers.js
-│ │ ├── formatters.js
-│ │ ├── persianDate.js
-│ │ └── validation.js
-│ │
-│ ├── App.jsx
-│ ├── main.jsx
-│ └── index.css
+│   ├── app/
+│   │   └── store.js                 # Redux Store
+│   │
+│   ├── components/
+│   │   ├── common/                  # کامپوننت‌های مشترک
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── GlobalSearch.jsx
+│   │   │   ├── LanguageSwitcher.jsx
+│   │   │   ├── LoadingSpinner.jsx
+│   │   │   └── OfflineIndicator.jsx
+│   │   │
+│   │   ├── layout/                  # چیدمان
+│   │   │   ├── AppLayout.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   └── MobileBottomNav.jsx
+│   │   │
+│   │   └── ui/                      # کامپوننت‌های پایه
+│   │       ├── Button.jsx
+│   │       ├── Card.jsx
+│   │       ├── ConfirmDialog.jsx
+│   │       ├── CustomSelect.jsx
+│   │       ├── Input.jsx
+│   │       ├── Modal.jsx
+│   │       └── FormSelect.jsx
+│   │
+│   ├── features/                    # ویژگی‌ها
+│   │   ├── achievements/            # دستاوردها
+│   │   ├── analytics/               # تحلیل‌ها
+│   │   ├── dashboard/               # داشبورد
+│   │   │   └── widgets/             # ویجت‌ها
+│   │   ├── habits/                  # عادت‌ها
+│   │   ├── notes/                   # یادداشت‌ها
+│   │   ├── notifications/           # اعلان‌ها
+│   │   ├── planning/                # برنامه‌ریزی
+│   │   ├── pomodoro/                # پومودورو
+│   │   ├── projects/                # پروژه‌ها
+│   │   ├── settings/                # تنظیمات
+│   │   ├── tasks/                   # کارها
+│   │   ├── theme/                   # ظاهر
+│   │   └── tracking/                # تایم‌ترکینگ
+│   │
+│   ├── hooks/                       # Custom Hooks
+│   │
+│   ├── i18n/                        # بین‌المللی‌سازی
+│   │   ├── config.js
+│   │   └── locales/
+│   │       ├── fa.json              # ترجمه فارسی
+│   │       └── en.json              # ترجمه انگلیسی
+│   │
+│   ├── services/                    # سرویس‌ها
+│   │   ├── exportService.js
+│   │   └── reminderService.js
+│   │
+│   ├── utils/                       # ابزارها
+│   │   ├── dataExport.js
+│   │   ├── dateHelpers.js
+│   │   ├── formatters.js
+│   │   ├── persianDate.js
+│   │   └── validation.js
+│   │
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
 │
 ├── .gitignore
 ├── index.html
@@ -239,7 +242,6 @@ smart-planner/
 ├── tailwind.config.js
 ├── vite.config.js
 └── README.md
-
 ---
 
 ## 🚀 نصب و اجرا
