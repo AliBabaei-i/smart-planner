@@ -156,39 +156,40 @@ Smart Planner یک اپلیکیشن تحت وب کاملاً آفلاین و Pro
 | **Jest** | تست واحد |
 | **Cypress** | E2E Testing |
 
----
 
 ## 📁 ساختار پروژه
+
+```
 smart-planner/
-├── public/                          # فایل‌های استاتیک
-│   ├── manifest.json                # PWA Manifest
-│   ├── sw.js                        # Service Worker
-│   ├── offline.html                 # صفحه آفلاین
-│   ├── favicon.svg                  # Favicon
-│   ├── icon.svg                     # آیکون اصلی
-│   ├── icon-maskable.svg            # آیکون Maskable
-│   ├── og-image.svg                 # تصویر OG
-│   └── icon-*.png                   # آیکون‌های PWA
+├── public/
+│   ├── manifest.json
+│   ├── sw.js
+│   ├── offline.html
+│   ├── favicon.svg
+│   ├── icon.svg
+│   ├── icon-maskable.svg
+│   ├── og-image.svg
+│   └── icon-*.png
 │
 ├── src/
 │   ├── app/
-│   │   └── store.js                 # Redux Store
+│   │   └── store.js
 │   │
 │   ├── components/
-│   │   ├── common/                  # کامپوننت‌های مشترک
+│   │   ├── common/
 │   │   │   ├── ErrorBoundary.jsx
 │   │   │   ├── GlobalSearch.jsx
 │   │   │   ├── LanguageSwitcher.jsx
 │   │   │   ├── LoadingSpinner.jsx
 │   │   │   └── OfflineIndicator.jsx
 │   │   │
-│   │   ├── layout/                  # چیدمان
+│   │   ├── layout/
 │   │   │   ├── AppLayout.jsx
 │   │   │   ├── Header.jsx
 │   │   │   ├── Sidebar.jsx
 │   │   │   └── MobileBottomNav.jsx
 │   │   │
-│   │   └── ui/                      # کامپوننت‌های پایه
+│   │   └── ui/
 │   │       ├── Button.jsx
 │   │       ├── Card.jsx
 │   │       ├── ConfirmDialog.jsx
@@ -197,35 +198,35 @@ smart-planner/
 │   │       ├── Modal.jsx
 │   │       └── FormSelect.jsx
 │   │
-│   ├── features/                    # ویژگی‌ها
-│   │   ├── achievements/            # دستاوردها
-│   │   ├── analytics/               # تحلیل‌ها
-│   │   ├── dashboard/               # داشبورد
-│   │   │   └── widgets/             # ویجت‌ها
-│   │   ├── habits/                  # عادت‌ها
-│   │   ├── notes/                   # یادداشت‌ها
-│   │   ├── notifications/           # اعلان‌ها
-│   │   ├── planning/                # برنامه‌ریزی
-│   │   ├── pomodoro/                # پومودورو
-│   │   ├── projects/                # پروژه‌ها
-│   │   ├── settings/                # تنظیمات
-│   │   ├── tasks/                   # کارها
-│   │   ├── theme/                   # ظاهر
-│   │   └── tracking/                # تایم‌ترکینگ
+│   ├── features/
+│   │   ├── achievements/
+│   │   ├── analytics/
+│   │   ├── dashboard/
+│   │   │   └── widgets/
+│   │   ├── habits/
+│   │   ├── notes/
+│   │   ├── notifications/
+│   │   ├── planning/
+│   │   ├── pomodoro/
+│   │   ├── projects/
+│   │   ├── settings/
+│   │   ├── tasks/
+│   │   ├── theme/
+│   │   └── tracking/
 │   │
-│   ├── hooks/                       # Custom Hooks
+│   ├── hooks/
 │   │
-│   ├── i18n/                        # بین‌المللی‌سازی
+│   ├── i18n/
 │   │   ├── config.js
 │   │   └── locales/
-│   │       ├── fa.json              # ترجمه فارسی
-│   │       └── en.json              # ترجمه انگلیسی
+│   │       ├── fa.json
+│   │       └── en.json
 │   │
-│   ├── services/                    # سرویس‌ها
+│   ├── services/
 │   │   ├── exportService.js
 │   │   └── reminderService.js
 │   │
-│   ├── utils/                       # ابزارها
+│   ├── utils/
 │   │   ├── dataExport.js
 │   │   ├── dateHelpers.js
 │   │   ├── formatters.js
@@ -242,7 +243,7 @@ smart-planner/
 ├── tailwind.config.js
 ├── vite.config.js
 └── README.md
----
+```
 
 ## 🚀 نصب و اجرا
 
