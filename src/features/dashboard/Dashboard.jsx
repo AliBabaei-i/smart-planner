@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { 
@@ -15,7 +15,6 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import WidgetWrapper from './WidgetWrapper'
 
-// Widget components
 import StatsWidget from './widgets/StatsWidget'
 import TodayTasksWidget from './widgets/TodayTasksWidget'
 import QuickActionsWidget from './widgets/QuickActionsWidget'
@@ -28,6 +27,7 @@ import ProductivityWidget from './widgets/ProductivityWidget'
 import ProductivityScoreWidget from './widgets/ProductivityScoreWidget'
 import NotesWidget from '../notes/NotesWidget'
 
+// ✅ خارج از کامپوننت — جلوگیری از بازتعریف
 const WIDGET_COMPONENTS = {
   productivityScore: ProductivityScoreWidget,
   stats: StatsWidget,
@@ -47,13 +47,27 @@ const Dashboard = () => {
   const dispatch = useDispatch()
   const { layout = [], editMode = false } = useSelector(state => state.dashboard || {})
 
-  const sortedWidgets = [...layout].sort((a, b) => a.order - b.order)
-  const visibleWidgets = sortedWidgets.filter(w => w.visible)
-  const hiddenWidgets = sortedWidgets.filter(w => !w.visible)
+  // ✅ useMemo برای مرتب‌سازی
+  const { visibleWidgets, hiddenWidgets } = useMemo(() => {
+    const sorted = [...layout].sort((a, b) => a.order - b.order)
+    return {
+      visibleWidgets: sorted.filter(w => w.visible),
+      hiddenWidgets: sorted.filter(w => !w.visible)
+    }
+  }, [layout])
+
+  const handleReset = useCallback(() => {
+    if (window.confirm(t('dashboard.resetLayout') + '?')) {
+      dispatch(resetLayout())
+    }
+  }, [dispatch, t])
+
+  const handleToggleEditMode = useCallback(() => {
+    dispatch(toggleEditMode())
+  }, [dispatch])
 
   return (
     <div className="space-y-6">
-      {/* هدر */}
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -67,32 +81,17 @@ const Dashboard = () => {
         <div className="flex gap-2">
           {editMode ? (
             <>
-              <Button 
-                variant="danger"
-                onClick={() => {
-                  if (window.confirm(t('dashboard.resetLayout') + '?')) {
-                    dispatch(resetLayout())
-                  }
-                }}
-                size="small"
-              >
+              <Button variant="danger" onClick={handleReset} size="small">
                 <FiRefreshCw size={14} />
                 <span>{t('actions.reset')}</span>
               </Button>
-              <Button 
-                onClick={() => dispatch(toggleEditMode())}
-                size="small"
-              >
+              <Button onClick={handleToggleEditMode} size="small">
                 <FiCheck size={14} />
                 <span>{t('dashboard.saveLayout')}</span>
               </Button>
             </>
           ) : (
-            <Button 
-              variant="secondary"
-              onClick={() => dispatch(toggleEditMode())}
-              size="small"
-            >
+            <Button variant="secondary" onClick={handleToggleEditMode} size="small">
               <FiSettings size={14} />
               <span>{t('dashboard.customize')}</span>
             </Button>
@@ -100,7 +99,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* پیام حالت ویرایش */}
       {editMode && (
         <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="flex items-start gap-3">
@@ -113,7 +111,6 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* ویجت‌ها */}
       {visibleWidgets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleWidgets.map(widget => {
@@ -142,14 +139,13 @@ const Dashboard = () => {
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {t('dashboard.noWidgets')}
           </h3>
-          <Button onClick={() => dispatch(toggleEditMode())}>
+          <Button onClick={handleToggleEditMode}>
             <FiEye size={16} />
             <span>{t('dashboard.customize')}</span>
           </Button>
         </Card>
       )}
 
-      {/* ویجت‌های مخفی */}
       {editMode && hiddenWidgets.length > 0 && (
         <Card className="p-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
@@ -180,4 +176,4 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
+export default memo(Dashboard)

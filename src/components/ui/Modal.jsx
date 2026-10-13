@@ -1,19 +1,24 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, memo } from 'react'
 
-const Modal = ({ isOpen, onClose, title, children, size = 'default' }) => {
-  // ✅ بستن با کلید Esc
+// ✅ Constants خارج از کامپوننت
+const SIZES = {
+  small: 'max-w-sm',
+  default: 'max-w-md',
+  large: 'max-w-2xl',
+  xlarge: 'max-w-4xl',
+  xxlarge: 'max-w-6xl'
+}
+
+const Modal = memo(({ isOpen, onClose, title, children, size = 'default' }) => {
   useEffect(() => {
+    if (!isOpen) return
+
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape') onClose()
     }
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      // جلوگیری از اسکرول پس‌زمینه
-      document.body.style.overflow = 'hidden'
-    }
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
@@ -23,27 +28,18 @@ const Modal = ({ isOpen, onClose, title, children, size = 'default' }) => {
 
   if (!isOpen) return null
 
-  // اندازه‌های مختلف Modal
-  const sizes = {
-    small: 'max-w-sm',
-    default: 'max-w-md',
-    large: 'max-w-2xl',
-    xlarge: 'max-w-4xl'
-  }
-
-  const sizeClass = sizes[size] || sizes.default
+  const sizeClass = SIZES[size] || SIZES.default
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="p-4 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
       onClick={onClose}
     >
       <div 
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl ${sizeClass} w-full max-h-[90vh] overflow-y-auto transform transition-all animate-slide-up`}
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl ${sizeClass} w-full max-h-[90vh] overflow-y-auto transform transition-all animate-slide-up `}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* هدر Modal */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 rounded-t-lg">
+        <div className=" flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 rounded-t-lg">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {title}
           </h2>
@@ -56,13 +52,13 @@ const Modal = ({ isOpen, onClose, title, children, size = 'default' }) => {
           </button>
         </div>
 
-        {/* محتوا */}
         <div className="p-6">
           {children}
         </div>
       </div>
     </div>
   )
-}
+})
+Modal.displayName = 'Modal'
 
 export default Modal

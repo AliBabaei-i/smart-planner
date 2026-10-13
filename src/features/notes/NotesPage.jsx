@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -32,7 +32,7 @@ import NoteCard from './NoteCard'
 import NoteForm from './NoteForm'
 import { formatNumber } from '../../utils/formatters'
 
-const NotesPage = () => {
+const NotesPage = memo(() => {
   const { t, i18n } = useTranslation()
   const dispatch = useDispatch()
   const { notes = [] } = useSelector(state => state.notes)
@@ -47,7 +47,7 @@ const NotesPage = () => {
 
   const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  // ✅ فیلتر
+  // ✅ useMemo: فیلتر
   const filteredNotes = useMemo(() => {
     return notes.filter(note => {
       if (showArchived !== note.archived) return false
@@ -66,7 +66,7 @@ const NotesPage = () => {
     })
   }, [notes, searchTerm, filterTag, showArchived])
 
-  // ✅ مرتب‌سازی: Pin شده‌ها اول
+  // ✅ useMemo: مرتب‌سازی با Pin
   const sortedNotes = useMemo(() => {
     return [...filteredNotes].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1
@@ -75,7 +75,7 @@ const NotesPage = () => {
     })
   }, [filteredNotes])
 
-  // ✅ همه تگ‌ها
+  // ✅ useMemo: همه تگ‌ها
   const allTags = useMemo(() => {
     const tags = new Set()
     notes.forEach(n => {
@@ -84,33 +84,55 @@ const NotesPage = () => {
     return [...tags]
   }, [notes])
 
-  const pinnedCount = filteredNotes.filter(n => n.pinned).length
-  const withChecklistCount = filteredNotes.filter(n => n.checklist?.length > 0).length
+  // ✅ useMemo: آمار
+  const stats = useMemo(() => {
+    let pinnedCount = 0
+    let withChecklistCount = 0
+    let archivedCount = 0
+    let activeCount = 0
 
-  const handleCreate = () => {
+    for (const note of notes) {
+      if (note.archived) archivedCount++
+      else activeCount++
+    }
+
+    for (const note of filteredNotes) {
+      if (note.pinned) pinnedCount++
+      if (note.checklist && note.checklist.length > 0) withChecklistCount++
+    }
+
+    return { pinnedCount, withChecklistCount, archivedCount, activeCount }
+  }, [notes, filteredNotes])
+
+  // ✅ useCallback: هندلرها
+  const handleCreate = useCallback(() => {
     setEditingNote(null)
     setShowForm(true)
-  }
+  }, [])
 
-  const handleEdit = (note) => {
+  const handleEdit = useCallback((note) => {
     setEditingNote(note)
     setShowForm(true)
-  }
+  }, [])
 
-  const handleCloseForm = () => {
+  const handleCloseForm = useCallback(() => {
     setShowForm(false)
     setEditingNote(null)
-  }
+  }, [])
 
-  const handleDelete = (note) => {
+  const handleDelete = useCallback((note) => {
     setDeleteConfirm({
       isOpen: true,
       noteId: note.id,
       noteTitle: note.title || (isPersian ? 'بدون عنوان' : 'Untitled')
     })
-  }
+  }, [isPersian])
 
-  const confirmDelete = () => {
+  const closeDeleteConfirm = useCallback(() => {
+    setDeleteConfirm({ isOpen: false, noteId: null, noteTitle: '' })
+  }, [])
+
+  const confirmDelete = useCallback(() => {
     dispatch(deleteNote(deleteConfirm.noteId))
     toast.success(
       <div className="flex items-center gap-2">
@@ -127,9 +149,9 @@ const NotesPage = () => {
       { position: "bottom-left", autoClose: 3000 }
     )
     setDeleteConfirm({ isOpen: false, noteId: null, noteTitle: '' })
-  }
+  }, [dispatch, deleteConfirm.noteId, deleteConfirm.noteTitle, isPersian])
 
-  const handleTogglePin = (noteId) => {
+  const handleTogglePin = useCallback((noteId) => {
     const note = notes.find(n => n.id === noteId)
     dispatch(togglePinNote(noteId))
     
@@ -150,9 +172,9 @@ const NotesPage = () => {
         { position: "bottom-left", autoClose: 2000 }
       )
     }
-  }
+  }, [dispatch, notes, isPersian])
 
-  const handleToggleArchive = (noteId) => {
+  const handleToggleArchive = useCallback((noteId) => {
     const note = notes.find(n => n.id === noteId)
     dispatch(toggleArchiveNote(noteId))
     
@@ -173,13 +195,13 @@ const NotesPage = () => {
         { position: "bottom-left", autoClose: 2000 }
       )
     }
-  }
+  }, [dispatch, notes, isPersian])
 
-  const handleToggleChecklist = (noteId, itemId) => {
+  const handleToggleChecklist = useCallback((noteId, itemId) => {
     dispatch(toggleChecklistItem({ noteId, itemId }))
-  }
+  }, [dispatch])
 
-  const handleCopy = async (note) => {
+  const handleCopy = useCallback(async (note) => {
     try {
       const text = `${note.title ? note.title + '\n\n' : ''}${note.content || ''}`
       await navigator.clipboard.writeText(text)
@@ -200,12 +222,16 @@ const NotesPage = () => {
         { position: "bottom-left", autoClose: 3000 }
       )
     }
-  }
+  }, [isPersian])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchTerm('')
     setFilterTag('all')
-  }
+  }, [])
+
+  const toggleShowArchived = useCallback(() => setShowArchived(prev => !prev), [])
+  const setGridView = useCallback(() => setViewMode('grid'), [])
+  const setListView = useCallback(() => setViewMode('list'), [])
 
   const hasActiveFilters = searchTerm || filterTag !== 'all'
 
@@ -227,7 +253,7 @@ const NotesPage = () => {
           {/* View toggle */}
           <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={setGridView}
               className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 ${
                 viewMode === 'grid'
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
@@ -237,7 +263,7 @@ const NotesPage = () => {
               <FiGrid size={16} />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={setListView}
               className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 border-s border-gray-300 dark:border-gray-600 ${
                 viewMode === 'list'
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
@@ -250,7 +276,7 @@ const NotesPage = () => {
 
           <Button 
             variant={showArchived ? 'primary' : 'secondary'}
-            onClick={() => setShowArchived(!showArchived)}
+            onClick={toggleShowArchived}
             size="small"
           >
             <FiArchive size={14} />
@@ -273,7 +299,7 @@ const NotesPage = () => {
             </div>
             <div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {formatNumber(showArchived ? notes.filter(n => n.archived).length : notes.filter(n => !n.archived).length)}
+                {formatNumber(showArchived ? stats.archivedCount : stats.activeCount)}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
                 {showArchived ? t('notes.archivedCount') : t('notes.totalNotes')}
@@ -289,7 +315,7 @@ const NotesPage = () => {
             </div>
             <div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {formatNumber(pinnedCount)}
+                {formatNumber(stats.pinnedCount)}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
                 {t('notes.pinnedCount')}
@@ -305,7 +331,7 @@ const NotesPage = () => {
             </div>
             <div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
-                {formatNumber(withChecklistCount)}
+                {formatNumber(stats.withChecklistCount)}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
                 {t('notes.withChecklist')}
@@ -443,7 +469,7 @@ const NotesPage = () => {
 
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, noteId: null, noteTitle: '' })}
+        onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title={t('actions.delete')}
         message={`"${deleteConfirm.noteTitle}"?`}
@@ -453,6 +479,7 @@ const NotesPage = () => {
       />
     </div>
   )
-}
+})
+NotesPage.displayName = 'NotesPage'
 
 export default NotesPage

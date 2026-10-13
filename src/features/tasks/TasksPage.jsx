@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -20,8 +20,7 @@ import {
   FiCheckCircle,
   FiCircle,
   FiRepeat,
-  FiColumns,
-  FiGrid
+  FiColumns
 } from 'react-icons/fi'
 import { toggleTaskStatus, deleteTask } from './tasksSlice'
 import { onTaskCompleted } from '../achievements/achievementsSlice'
@@ -38,13 +37,216 @@ import KanbanBoard from './KanbanBoard'
 import { formatTimeByLang, formatDateByLang } from '../../utils/formatters'
 import { PRIORITIES } from '../../constants/priorities'
 
+// ✅ کامپوننت TaskCard جدا + memo شده
+const TaskCard = memo(({ 
+  task, 
+  project, 
+  priorityInfo, 
+  subtaskProgress,
+  t,
+  onToggle,
+  onViewDetails,
+  onStartTracking,
+  onEdit,
+  onDelete,
+  onTagClick
+}) => {
+  return (
+    <Card className="p-4 hover:shadow-lg transition-all">
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <button
+            onClick={() => onToggle(task.id)}
+            className="mt-0.5 flex-shrink-0 transition-colors"
+          >
+            {task.completed ? (
+              <FiCheckCircle size={22} className="text-green-500 hover:text-green-600" />
+            ) : (
+              <FiCircle size={22} className="text-gray-400 hover:text-blue-500" />
+            )}
+          </button>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span 
+                className={`font-medium text-lg cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
+                  task.completed 
+                    ? 'line-through text-gray-400 dark:text-gray-500' 
+                    : 'text-gray-900 dark:text-white'
+                }`}
+                onClick={() => onViewDetails(task)}
+              >
+                {task.title}
+              </span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${priorityInfo.bgColor} ${priorityInfo.color} font-medium`}>
+                {t(`tasks.priority.${task.priority}`)}
+              </span>
+              {task.recurring && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
+                  <FiRepeat size={10} />
+                  <span>{t(`tasks.form.${task.recurring}`)}</span>
+                </span>
+              )}
+              {task.status === 'in-progress' && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
+                  <FiClock size={10} />
+                  <span>{t('kanban.inProgress')}</span>
+                </span>
+              )}
+            </div>
+            
+            {task.description && (
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
+                {task.description}
+              </p>
+            )}
+
+            {task.tags && task.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {task.tags.map(tag => (
+                  <TagBadge 
+                    key={tag} 
+                    tag={tag}
+                    clickable
+                    onClick={() => onTagClick(tag)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {subtaskProgress && subtaskProgress.total > 0 && (
+              <div className="mt-2 p-2.5 bg-gray-50 dark:bg-gray-700/30 rounded-lg max-w-md">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <FiList size={12} className="text-gray-500" />
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {t('tasks.form.subtasks')}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      subtaskProgress.percentage === 100 
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                    }`}>
+                      {subtaskProgress.completed}/{subtaskProgress.total}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {subtaskProgress.percentage}%
+                  </span>
+                </div>
+                
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
+                  <div 
+                    className={`h-1.5 rounded-full transition-all ${
+                      subtaskProgress.percentage === 100 
+                        ? 'bg-green-500' 
+                        : 'bg-gradient-to-l from-green-500 to-blue-500'
+                    }`}
+                    style={{ width: `${subtaskProgress.percentage}%` }}
+                  ></div>
+                </div>
+
+                <div className="space-y-1">
+                  {task.subtasks.slice(0, 2).map(subtask => (
+                    <div key={subtask.id} className="flex items-center gap-2 text-xs">
+                      {subtask.completed ? (
+                        <FiCheckCircle size={12} className="text-green-500 flex-shrink-0" />
+                      ) : (
+                        <FiCircle size={12} className="text-gray-400 flex-shrink-0" />
+                      )}
+                      <span className={`truncate ${
+                        subtask.completed 
+                          ? 'line-through text-gray-400 dark:text-gray-500' 
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {subtask.title}
+                      </span>
+                    </div>
+                  ))}
+                  {task.subtasks.length > 2 && (
+                    <div className="text-xs text-gray-400 dark:text-gray-500 ps-5">
+                      + {task.subtasks.length - 2} {t('tasks.more')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap mt-2">
+              <div className="flex items-center gap-1">
+                <div 
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: project?.color || '#6b7280' }}
+                ></div>
+                <span>{project?.name || t('tasks.form.selectProject')}</span>
+              </div>
+              
+              {task.dueDate && (
+                <span className="flex items-center gap-1">
+                  <FiCalendar size={12} />
+                  <span>{formatDateByLang(task.dueDate)}</span>
+                </span>
+              )}
+
+              {task.dueTime !== null && task.dueTime !== undefined && (
+                <span className="flex items-center gap-1">
+                  <FiClock size={12} />
+                  <span>{task.dueTime.toString().padStart(2, '0')}:۰۰</span>
+                </span>
+              )}
+              
+              {task.actualTime > 0 && (
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <FiCheckCircle size={12} />
+                  <span>{formatTimeByLang(task.actualTime)}</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => onViewDetails(task)}
+            className="text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={t('actions.view')}
+          >
+            <FiEye size={16} />
+          </button>
+          <button
+            onClick={() => onStartTracking(task)}
+            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={t('pomodoro.title')}
+          >
+            <FiClock size={16} />
+          </button>
+          <button
+            onClick={() => onEdit(task)}
+            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={t('actions.edit')}
+          >
+            <FiEdit2 size={16} />
+          </button>
+          <button
+            onClick={() => onDelete(task)}
+            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={t('actions.delete')}
+          >
+            <FiTrash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </Card>
+  )
+})
+TaskCard.displayName = 'TaskCard'
+
 const TasksPage = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { tasks = [], availableTags = [] } = useSelector(state => state.tasks)
   const { projects = [] } = useSelector(state => state.projects)
   
-  // States
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [showTimeTracker, setShowTimeTracker] = useState(false)
@@ -61,77 +263,105 @@ const TasksPage = () => {
   const [filterProject, setFilterProject] = useState('all')
   const [filterTag, setFilterTag] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
-  const [viewMode, setViewMode] = useState('list') // 'list' | 'kanban'
+  const [viewMode, setViewMode] = useState('list')
 
-  // ✅ فیلتر کارها
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = 
-      task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'completed' && task.completed) ||
-                         (filterStatus === 'pending' && !task.completed)
-    
-    const matchesProject = filterProject === 'all' || task.projectId === filterProject
-    const matchesTag = filterTag === 'all' || (task.tags && task.tags.includes(filterTag))
-    
-    return matchesSearch && matchesStatus && matchesProject && matchesTag
-  })
+  // ✅ useMemo: projectsById Map
+  const projectsById = useMemo(() => {
+    const map = new Map()
+    for (const p of projects) map.set(p.id, p)
+    return map
+  }, [projects])
 
-  const getTagCount = (tag) => tasks.filter(task => task.tags && task.tags.includes(tag)).length
-  const sortedTags = [...availableTags].sort((a, b) => getTagCount(b) - getTagCount(a))
+  // ✅ useMemo: tag counts (قبلاً O(n*m) بود)
+  const tagCounts = useMemo(() => {
+    const map = new Map()
+    for (const task of tasks) {
+      if (!task.tags) continue
+      for (const tag of task.tags) {
+        map.set(tag, (map.get(tag) || 0) + 1)
+      }
+    }
+    return map
+  }, [tasks])
 
-  // ✅ تیک زدن کار
-  const handleToggleTask = (taskId) => {
+  // ✅ useMemo: sorted tags
+  const sortedTags = useMemo(() => {
+    return [...availableTags].sort((a, b) => 
+      (tagCounts.get(b) || 0) - (tagCounts.get(a) || 0)
+    )
+  }, [availableTags, tagCounts])
+
+  // ✅ useMemo: filtered tasks (قبلاً در هر رندر)
+  const filteredTasks = useMemo(() => {
+    const lowerSearch = searchTerm.toLowerCase().trim()
+    
+    return tasks.filter(task => {
+      // Search
+      if (lowerSearch) {
+        const titleMatch = task.title?.toLowerCase().includes(lowerSearch)
+        const descMatch = task.description?.toLowerCase().includes(lowerSearch)
+        const tagMatch = task.tags?.some(tag => tag.toLowerCase().includes(lowerSearch))
+        if (!titleMatch && !descMatch && !tagMatch) return false
+      }
+      
+      // Status
+      if (filterStatus === 'completed' && !task.completed) return false
+      if (filterStatus === 'pending' && task.completed) return false
+      
+      // Project
+      if (filterProject !== 'all' && task.projectId !== filterProject) return false
+      
+      // Tag
+      if (filterTag !== 'all' && (!task.tags || !task.tags.includes(filterTag))) return false
+      
+      return true
+    })
+  }, [tasks, searchTerm, filterStatus, filterProject, filterTag])
+
+  const hasActiveFilters = searchTerm || filterStatus !== 'all' || filterProject !== 'all' || filterTag !== 'all'
+
+  // ✅ useCallback: هندلرها
+  const handleToggleTask = useCallback((taskId) => {
     const task = tasks.find(t => t.id === taskId)
     dispatch(toggleTaskStatus(taskId))
     
     if (task && !task.completed) {
       dispatch(onTaskCompleted({ actualTime: task.actualTime || 0 }))
     }
-  }
+  }, [dispatch, tasks])
 
-  // ✅ ایجاد
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     setEditingTask(null)
     setShowTaskForm(true)
-  }
+  }, [])
 
-  // ✅ ویرایش
-  const handleEdit = (task) => {
+  const handleEdit = useCallback((task) => {
     setEditingTask(task)
     setShowTaskForm(true)
-    if (showDetails) {
-      setShowDetails(false)
-      setDetailsTask(null)
-    }
-  }
-
-  // ✅ بستن فرم
-  const handleCloseForm = () => {
-    setShowTaskForm(false)
-    setEditingTask(null)
-  }
-
-  // ✅ مشاهده جزئیات
-  const handleViewDetails = (task) => {
-    setDetailsTask(task)
-    setShowDetails(true)
-  }
-
-  const handleCloseDetails = () => {
     setShowDetails(false)
     setDetailsTask(null)
-  }
+  }, [])
 
-  // ✅ حذف
-  const handleDeleteTask = (task) => {
+  const handleCloseForm = useCallback(() => {
+    setShowTaskForm(false)
+    setEditingTask(null)
+  }, [])
+
+  const handleViewDetails = useCallback((task) => {
+    setDetailsTask(task)
+    setShowDetails(true)
+  }, [])
+
+  const handleCloseDetails = useCallback(() => {
+    setShowDetails(false)
+    setDetailsTask(null)
+  }, [])
+
+  const handleDeleteTask = useCallback((task) => {
     setDeleteConfirm({ isOpen: true, taskId: task.id, taskTitle: task.title })
-  }
+  }, [])
 
-  const confirmDeleteTask = () => {
+  const confirmDeleteTask = useCallback(() => {
     dispatch(deleteTask(deleteConfirm.taskId))
     toast.success(`${deleteConfirm.taskTitle} - ${t('actions.delete')}`, {
       position: "bottom-left",
@@ -143,25 +373,25 @@ const TasksPage = () => {
       setShowDetails(false)
       setDetailsTask(null)
     }
-  }
+  }, [dispatch, deleteConfirm, t, showDetails, detailsTask])
 
-  // ✅ تایم‌ترکینگ
-  const handleStartTimeTracking = (task) => {
+  const handleStartTimeTracking = useCallback((task) => {
     setSelectedTask(task)
     setShowTimeTracker(true)
-  }
+  }, [])
 
-  const getProjectName = (projectId) => {
-    const project = projects.find(p => p.id === projectId)
-    return project ? project.name : t('tasks.form.selectProject')
-  }
+  const handleTagClick = useCallback((tag) => {
+    setFilterTag(tag)
+  }, [])
 
-  const getProjectColor = (projectId) => {
-    const project = projects.find(p => p.id === projectId)
-    return project ? project.color : '#6b7280'
-  }
+  const clearFilters = useCallback(() => {
+    setSearchTerm('')
+    setFilterStatus('all')
+    setFilterProject('all')
+    setFilterTag('all')
+  }, [])
 
-  const getSubtaskProgress = (task) => {
+  const getSubtaskProgress = useCallback((task) => {
     const subtasks = task.subtasks || []
     if (subtasks.length === 0) return null
     const completed = subtasks.filter(st => st.completed).length
@@ -170,16 +400,7 @@ const TasksPage = () => {
       total: subtasks.length,
       percentage: Math.round((completed / subtasks.length) * 100)
     }
-  }
-
-  const clearFilters = () => {
-    setSearchTerm('')
-    setFilterStatus('all')
-    setFilterProject('all')
-    setFilterTag('all')
-  }
-
-  const hasActiveFilters = searchTerm || filterStatus !== 'all' || filterProject !== 'all' || filterTag !== 'all'
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -196,7 +417,6 @@ const TasksPage = () => {
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {/* ✅ Toggle view mode */}
           <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
@@ -205,7 +425,6 @@ const TasksPage = () => {
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
-              title={t('kanban.listView')}
             >
               <FiList size={16} />
               <span className="hidden sm:inline">{t('kanban.listView')}</span>
@@ -217,7 +436,6 @@ const TasksPage = () => {
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
-              title={t('kanban.kanbanView')}
             >
               <FiColumns size={16} />
               <span className="hidden sm:inline">{t('kanban.kanbanView')}</span>
@@ -256,11 +474,7 @@ const TasksPage = () => {
               {showFilters ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
             </Button>
             {hasActiveFilters && (
-              <Button
-                variant="secondary"
-                onClick={clearFilters}
-                title={t('tasks.clearFilters')}
-              >
+              <Button variant="secondary" onClick={clearFilters}>
                 <FiX size={16} />
               </Button>
             )}
@@ -311,7 +525,7 @@ const TasksPage = () => {
                   <option value="all">{t('tasks.form.tags')}</option>
                   {sortedTags.map(tag => (
                     <option key={tag} value={tag}>
-                      {tag} ({getTagCount(tag)})
+                      {tag} ({tagCounts.get(tag) || 0})
                     </option>
                   ))}
                 </select>
@@ -364,7 +578,6 @@ const TasksPage = () => {
         </Card>
       )}
 
-      {/* ✅ محتوا بر اساس view mode */}
       {viewMode === 'kanban' ? (
         <KanbanBoard 
           onEditTask={handleEdit}
@@ -373,209 +586,25 @@ const TasksPage = () => {
         />
       ) : (
         <>
-          {/* لیست کارها */}
           <div className="space-y-3">
-            {filteredTasks.map(task => {
-              const priorityInfo = PRIORITIES[task.priority]
-              const projectColor = getProjectColor(task.projectId)
-              const subtaskProgress = getSubtaskProgress(task)
-              
-              return (
-                <Card key={task.id} className="p-4 hover:shadow-lg transition-all">
-                  <div className="flex items-start justify-between flex-wrap gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <button
-                        onClick={() => handleToggleTask(task.id)}
-                        className="mt-0.5 flex-shrink-0 transition-colors"
-                      >
-                        {task.completed ? (
-                          <FiCheckCircle size={22} className="text-green-500 hover:text-green-600" />
-                        ) : (
-                          <FiCircle size={22} className="text-gray-400 hover:text-blue-500" />
-                        )}
-                      </button>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span 
-                            className={`font-medium text-lg cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                              task.completed 
-                                ? 'line-through text-gray-400 dark:text-gray-500' 
-                                : 'text-gray-900 dark:text-white'
-                            }`}
-                            onClick={() => handleViewDetails(task)}
-                          >
-                            {task.title}
-                          </span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${priorityInfo.bgColor} ${priorityInfo.color} font-medium`}>
-                            {t(`tasks.priority.${task.priority}`)}
-                          </span>
-                          {task.recurring && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
-                              <FiRepeat size={10} />
-                              <span>{t(`tasks.form.${task.recurring}`)}</span>
-                            </span>
-                          )}
-                          {task.status === 'in-progress' && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
-                              <FiClock size={10} />
-                              <span>{t('kanban.inProgress')}</span>
-                            </span>
-                          )}
-                        </div>
-                        
-                        {task.description && (
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-
-                        {/* تگ‌ها */}
-                        {task.tags && task.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {task.tags.map(tag => (
-                              <TagBadge 
-                                key={tag} 
-                                tag={tag}
-                                clickable
-                                onClick={() => setFilterTag(tag)}
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        {/* زیرتسک‌ها */}
-                        {subtaskProgress && subtaskProgress.total > 0 && (
-                          <div className="mt-2 p-2.5 bg-gray-50 dark:bg-gray-700/30 rounded-lg max-w-md">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="flex items-center gap-2">
-                                <FiList size={12} className="text-gray-500" />
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                  {t('tasks.form.subtasks')}
-                                </span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  subtaskProgress.percentage === 100 
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                }`}>
-                                  {subtaskProgress.completed}/{subtaskProgress.total}
-                                </span>
-                              </div>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {subtaskProgress.percentage}%
-                              </span>
-                            </div>
-                            
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
-                              <div 
-                                className={`h-1.5 rounded-full transition-all ${
-                                  subtaskProgress.percentage === 100 
-                                    ? 'bg-green-500' 
-                                    : 'bg-gradient-to-l from-green-500 to-blue-500'
-                                }`}
-                                style={{ width: `${subtaskProgress.percentage}%` }}
-                              ></div>
-                            </div>
-
-                            <div className="space-y-1">
-                              {task.subtasks.slice(0, 2).map(subtask => (
-                                <div 
-                                  key={subtask.id}
-                                  className="flex items-center gap-2 text-xs"
-                                >
-                                  {subtask.completed ? (
-                                    <FiCheckCircle size={12} className="text-green-500 flex-shrink-0" />
-                                  ) : (
-                                    <FiCircle size={12} className="text-gray-400 flex-shrink-0" />
-                                  )}
-                                  <span className={`truncate ${
-                                    subtask.completed 
-                                      ? 'line-through text-gray-400 dark:text-gray-500' 
-                                      : 'text-gray-600 dark:text-gray-400'
-                                  }`}>
-                                    {subtask.title}
-                                  </span>
-                                </div>
-                              ))}
-                              {task.subtasks.length > 2 && (
-                                <div className="text-xs text-gray-400 dark:text-gray-500 ps-5">
-                                  + {task.subtasks.length - 2} {t('tasks.more')}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap mt-2">
-                          <div className="flex items-center gap-1">
-                            <div 
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: projectColor }}
-                            ></div>
-                            <span>{getProjectName(task.projectId)}</span>
-                          </div>
-                          
-                          {task.dueDate && (
-                            <span className="flex items-center gap-1">
-                              <FiCalendar size={12} />
-                              <span>{formatDateByLang(task.dueDate)}</span>
-                            </span>
-                          )}
-
-                          {task.dueTime !== null && task.dueTime !== undefined && (
-                            <span className="flex items-center gap-1">
-                              <FiClock size={12} />
-                              <span>{task.dueTime.toString().padStart(2, '0')}:۰۰</span>
-                            </span>
-                          )}
-                          
-                          {task.actualTime > 0 && (
-                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                              <FiCheckCircle size={12} />
-                              <span>{formatTimeByLang(task.actualTime)}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleViewDetails(task)}
-                        className="text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title={t('actions.view')}
-                      >
-                        <FiEye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleStartTimeTracking(task)}
-                        className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title={t('pomodoro.title')}
-                      >
-                        <FiClock size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(task)}
-                        className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title={t('actions.edit')}
-                      >
-                        <FiEdit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTask(task)}
-                        className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title={t('actions.delete')}
-                      >
-                        <FiTrash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
+            {filteredTasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                project={projectsById.get(task.projectId)}
+                priorityInfo={PRIORITIES[task.priority]}
+                subtaskProgress={getSubtaskProgress(task)}
+                t={t}
+                onToggle={handleToggleTask}
+                onViewDetails={handleViewDetails}
+                onStartTracking={handleStartTimeTracking}
+                onEdit={handleEdit}
+                onDelete={handleDeleteTask}
+                onTagClick={handleTagClick}
+              />
+            ))}
           </div>
 
-          {/* حالت خالی */}
           {filteredTasks.length === 0 && (
             <Card className="p-12 text-center">
               <div className="w-20 h-20 mx-auto bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
@@ -603,12 +632,12 @@ const TasksPage = () => {
         </>
       )}
 
-      {/* Modals */}
       <Modal
-        isOpen={showTaskForm}
-        onClose={handleCloseForm}
-        title={editingTask ? t('tasks.form.editTitle') : t('tasks.form.createTitle')}
-      >
+  isOpen={showTaskForm}
+  onClose={handleCloseForm}
+  title={editingTask ? t('tasks.form.editTitle') : t('tasks.form.createTitle')}
+  size="xlarge"
+>
         <TaskForm onClose={handleCloseForm} editTask={editingTask} />
       </Modal>
 
@@ -652,4 +681,4 @@ const TasksPage = () => {
   )
 }
 
-export default TasksPage
+export default memo(TasksPage)

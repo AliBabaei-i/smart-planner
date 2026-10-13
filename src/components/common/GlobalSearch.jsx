@@ -2,19 +2,20 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiSearch, 
-  FiHome, 
-  FiFolder, 
-  FiCheckSquare, 
-  FiCalendar, 
-  FiBarChart2, 
-  FiAward, 
+import {
+  FiSearch,
+  FiHome,
+  FiFolder,
+  FiCheckSquare,
+  FiCalendar,
+  FiBarChart2,
+  FiAward,
   FiSettings,
   FiCheckCircle,
   FiCircle,
   FiActivity,
-  FiEdit3
+  FiEdit3,
+  FiTarget
 } from 'react-icons/fi'
 
 const GlobalSearch = ({ isOpen, onClose }) => {
@@ -24,7 +25,8 @@ const GlobalSearch = ({ isOpen, onClose }) => {
   const { projects = [] } = useSelector(state => state.projects)
   const { notes = [] } = useSelector(state => state.notes || { notes: [] })
   const { habits = [] } = useSelector(state => state.habits || { habits: [] })
-  
+  const { goals = [] } = useSelector(state => state.goals || { goals: [] })
+const { journals = [], skills = [] } = useSelector(state => state.growth || {})
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef(null)
@@ -45,6 +47,8 @@ const GlobalSearch = ({ isOpen, onClose }) => {
         { type: 'action', id: 'tasks', title: t('nav.tasks'), path: '/tasks', Icon: FiCheckSquare, iconColor: 'text-green-500' },
         { type: 'action', id: 'habits', title: t('nav.habits'), path: '/habits', Icon: FiActivity, iconColor: 'text-orange-500' },
         { type: 'action', id: 'notes', title: t('nav.notes'), path: '/notes', Icon: FiEdit3, iconColor: 'text-purple-500' },
+        { type: 'action', id: 'goals', title: t('nav.goals'), path: '/goals', Icon: FiTarget, iconColor: 'text-indigo-500' },
+        
         { type: 'action', id: 'planning', title: t('nav.planning'), path: '/planning', Icon: FiCalendar, iconColor: 'text-teal-500' },
         { type: 'action', id: 'analytics', title: t('nav.analytics'), path: '/analytics', Icon: FiBarChart2, iconColor: 'text-indigo-500' },
         { type: 'action', id: 'achievements', title: t('nav.achievements'), path: '/achievements', Icon: FiAward, iconColor: 'text-yellow-500' },
@@ -55,11 +59,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
     const lowerQuery = query.toLowerCase().trim()
     const results = []
 
-    // ✅ جستجو در Tasks
+    // Tasks
     tasks.forEach(task => {
       const matchTitle = task.title?.toLowerCase().includes(lowerQuery)
       const matchDesc = task.description?.toLowerCase().includes(lowerQuery)
-      
+
       if (matchTitle || matchDesc) {
         const project = projects.find(p => p.id === task.projectId)
         results.push({
@@ -75,11 +79,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
       }
     })
 
-    // ✅ جستجو در Projects
+    // Projects
     projects.forEach(project => {
       const matchName = project.name?.toLowerCase().includes(lowerQuery)
       const matchDesc = project.description?.toLowerCase().includes(lowerQuery)
-      
+
       if (matchName || matchDesc) {
         results.push({
           type: 'project',
@@ -94,11 +98,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
       }
     })
 
-    // ✅ جستجو در Notes
+    // Notes
     notes.forEach(note => {
       const matchTitle = note.title?.toLowerCase().includes(lowerQuery)
       const matchContent = note.content?.toLowerCase().includes(lowerQuery)
-      
+
       if (matchTitle || matchContent) {
         results.push({
           type: 'note',
@@ -113,11 +117,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
       }
     })
 
-    // ✅ جستجو در Habits
+    // Habits
     habits.forEach(habit => {
       const matchName = habit.name?.toLowerCase().includes(lowerQuery)
       const matchDesc = habit.description?.toLowerCase().includes(lowerQuery)
-      
+
       if (matchName || matchDesc) {
         results.push({
           type: 'habit',
@@ -132,13 +136,70 @@ const GlobalSearch = ({ isOpen, onClose }) => {
       }
     })
 
-    // ✅ جستجو در منوها
+    // Goals
+    goals.forEach(goal => {
+      const matchTitle = goal.title?.toLowerCase().includes(lowerQuery)
+      const matchDesc = goal.description?.toLowerCase().includes(lowerQuery)
+
+      if (matchTitle || matchDesc) {
+        results.push({
+          type: 'goal',
+          id: `goal-${goal.id}`,
+          title: goal.title,
+          subtitle: goal.description?.substring(0, 50) || '',
+          path: '/goals',
+          Icon: FiTarget,
+          iconColor: 'text-indigo-500',
+          data: goal
+        })
+      }
+    })
+// Journals
+journals.forEach(journal => {
+  if (
+    journal.reflection?.toLowerCase().includes(lowerQuery) ||
+    journal.gratitude?.toLowerCase().includes(lowerQuery)
+  ) {
+    results.push({
+      type: 'journal',
+      id: `journal-${journal.id}`,
+      title: journal.date,
+      subtitle: journal.reflection?.substring(0, 50) || '',
+      path: '/growth',
+      Icon: FiBookOpen,
+      iconColor: 'text-purple-500',
+      data: journal
+    })
+  }
+})
+
+// Skills
+skills.forEach(skill => {
+  if (
+    skill.name?.toLowerCase().includes(lowerQuery) ||
+    skill.description?.toLowerCase().includes(lowerQuery)
+  ) {
+    results.push({
+      type: 'skill',
+      id: `skill-${skill.id}`,
+      title: skill.name,
+      subtitle: skill.description?.substring(0, 50) || '',
+      path: '/growth',
+      Icon: FiAward,
+      iconColor: 'text-blue-500',
+      data: skill
+    })
+  }
+})
+    // Menu
     const menuItems = [
       { title: t('nav.dashboard'), path: '/', Icon: FiHome },
       { title: t('nav.projects'), path: '/projects', Icon: FiFolder },
       { title: t('nav.tasks'), path: '/tasks', Icon: FiCheckSquare },
       { title: t('nav.habits'), path: '/habits', Icon: FiActivity },
       { title: t('nav.notes'), path: '/notes', Icon: FiEdit3 },
+      { title: t('nav.goals'), path: '/goals', Icon: FiTarget },
+      { title: t('nav.growth'), path: '/growth', Icon: FiTrendingUp },
       { title: t('nav.planning'), path: '/planning', Icon: FiCalendar },
       { title: t('nav.analytics'), path: '/analytics', Icon: FiBarChart2 },
       { title: t('nav.achievements'), path: '/achievements', Icon: FiAward },
@@ -160,7 +221,7 @@ const GlobalSearch = ({ isOpen, onClose }) => {
     })
 
     return results.slice(0, 10)
-  }, [query, tasks, projects, notes, habits, t])
+  }, [query, tasks, projects, notes, habits, goals, t])
 
   useEffect(() => {
     if (!isOpen) return
@@ -193,11 +254,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 pt-[10vh] z-[100] animate-fade-in"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
@@ -236,8 +297,8 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                     onClick={() => handleSelectResult(result)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={`w-full text-start flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                      index === activeIndex 
-                        ? 'bg-blue-50 dark:bg-blue-900/30' 
+                      index === activeIndex
+                        ? 'bg-blue-50 dark:bg-blue-900/30'
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                     }`}
                   >
@@ -256,10 +317,11 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                     </div>
                     {result.type && result.type !== 'action' && result.type !== 'navigation' && (
                       <span className="text-xs text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded flex-shrink-0">
-                        {result.type === 'task' ? t('search.task') 
-                          : result.type === 'project' ? t('search.project') 
+                        {result.type === 'task' ? t('search.task')
+                          : result.type === 'project' ? t('search.project')
                           : result.type === 'note' ? t('search.note')
                           : result.type === 'habit' ? t('search.habit')
+                          : result.type === 'goal' ? t('search.goal')
                           : ''}
                       </span>
                     )}

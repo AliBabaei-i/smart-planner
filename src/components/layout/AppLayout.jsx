@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, memo } from 'react'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 
-const AppLayout = ({ children, onOpenSearch, onOpenQuickAdd }) => {
+const AppLayout = memo(({ children, onOpenSearch, onOpenQuickAdd }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), [])
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
@@ -12,7 +15,7 @@ const AppLayout = ({ children, onOpenSearch, onOpenQuickAdd }) => {
         <Header 
           onOpenSearch={onOpenSearch} 
           onOpenQuickAdd={onOpenQuickAdd}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={toggleSidebar}
         />
       </div>
       
@@ -25,10 +28,10 @@ const AppLayout = ({ children, onOpenSearch, onOpenQuickAdd }) => {
           <>
             <div 
               className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 animate-fade-in"
-              onClick={() => setSidebarOpen(false)}
-            ></div>
+              onClick={closeSidebar}
+            />
             <div className="md:hidden fixed top-16 bottom-0 end-0 z-50 animate-slide-in">
-              <Sidebar onItemClick={() => setSidebarOpen(false)} />
+              <Sidebar onItemClick={closeSidebar} />
             </div>
           </>
         )}
@@ -43,6 +46,7 @@ const AppLayout = ({ children, onOpenSearch, onOpenQuickAdd }) => {
       <MobileBottomNav onOpenQuickAdd={onOpenQuickAdd} />
     </div>
   )
-}
+})
+AppLayout.displayName = 'AppLayout'
 
 export default AppLayout

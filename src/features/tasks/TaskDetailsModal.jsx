@@ -1,29 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import {
-  FiSave,
-  FiEdit2,
-  FiCheckCircle,
-  FiCircle,
-  FiPlus,
-  FiTrash2,
-  FiCalendar,
-  FiClock,
-  FiTag,
-  FiList,
-  FiFileText,
-  FiChevronLeft,
-  FiRepeat
+  FiSave, FiEdit2, FiCheckCircle, FiCircle, FiPlus, FiTrash2,
+  FiCalendar, FiClock, FiTag, FiList, FiFileText, FiChevronLeft, FiRepeat
 } from 'react-icons/fi'
 import { 
-  updateTaskNotes, 
-  toggleTaskStatus,
-  addSubtask,
-  toggleSubtask,
-  deleteSubtask,
-  updateSubtask
+  updateTaskNotes, toggleTaskStatus, addSubtask, toggleSubtask,
+  deleteSubtask, updateSubtask
 } from './tasksSlice'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
@@ -31,7 +16,7 @@ import TagBadge from './TagBadge'
 import { formatTimeByLang, formatLongDateByLang } from '../../utils/formatters'
 import { PRIORITIES } from '../../constants/priorities'
 
-const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
+const TaskDetailsModal = memo(({ isOpen, onClose, task, onEdit }) => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { projects = [] } = useSelector(state => state.projects)
@@ -39,6 +24,13 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
   const [newSubtask, setNewSubtask] = useState('')
   const [editingSubtask, setEditingSubtask] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
+
+  // ✅ useMemo: projectsById Map
+  const projectsById = useMemo(() => {
+    const map = new Map()
+    for (const p of projects) map.set(p.id, p)
+    return map
+  }, [projects])
 
   useEffect(() => {
     if (task) {
@@ -48,49 +40,51 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
     }
   }, [task])
 
-  if (!task) return null
+  // ✅ useMemo: محاسبات subtasks
+  const { subtasks, completedSubtasks, subtaskProgress } = useMemo(() => {
+    const st = task?.subtasks || []
+    const completed = st.filter(s => s.completed).length
+    const progress = st.length > 0 ? Math.round((completed / st.length) * 100) : 0
+    return { subtasks: st, completedSubtasks: completed, subtaskProgress: progress }
+  }, [task])
 
-  const project = projects.find(p => p.id === task.projectId)
-  const priorityInfo = PRIORITIES[task.priority]
-  
-  const subtasks = task.subtasks || []
-  const completedSubtasks = subtasks.filter(st => st.completed).length
-  const subtaskProgress = subtasks.length > 0 
-    ? Math.round((completedSubtasks / subtasks.length) * 100) 
-    : 0
+  const project = useMemo(
+    () => task ? projectsById.get(task.projectId) : null,
+    [task, projectsById]
+  )
 
-  const handleSaveNotes = () => {
+  const priorityInfo = task ? PRIORITIES[task.priority] : null
+
+  // ✅ useCallback: هندلرها
+  const handleSaveNotes = useCallback(() => {
     dispatch(updateTaskNotes({ taskId: task.id, notes }))
-    toast.success(t('actions.save'), {
-      position: "bottom-left",
-      autoClose: 2000,
-    })
-  }
+    toast.success(t('actions.save'), { position: "bottom-left", autoClose: 2000 })
+  }, [dispatch, task, notes, t])
 
-  const handleToggleStatus = () => {
+  const handleToggleStatus = useCallback(() => {
     dispatch(toggleTaskStatus(task.id))
-  }
+  }, [dispatch, task])
 
-  const handleAddSubtask = () => {
+  const handleAddSubtask = useCallback(() => {
     if (!newSubtask.trim()) return
     dispatch(addSubtask({ taskId: task.id, title: newSubtask.trim() }))
     setNewSubtask('')
-  }
+  }, [dispatch, task, newSubtask])
 
-  const handleDeleteSubtask = (subtaskId) => {
+  const handleDeleteSubtask = useCallback((subtaskId) => {
     dispatch(deleteSubtask({ taskId: task.id, subtaskId }))
-  }
+  }, [dispatch, task])
 
-  const handleToggleSubtask = (subtaskId) => {
+  const handleToggleSubtask = useCallback((subtaskId) => {
     dispatch(toggleSubtask({ taskId: task.id, subtaskId }))
-  }
+  }, [dispatch, task])
 
-  const startEditSubtask = (subtask) => {
+  const startEditSubtask = useCallback((subtask) => {
     setEditingSubtask(subtask.id)
     setEditingTitle(subtask.title)
-  }
+  }, [])
 
-  const saveEditSubtask = () => {
+  const saveEditSubtask = useCallback(() => {
     if (editingTitle.trim() && editingSubtask) {
       dispatch(updateSubtask({ 
         taskId: task.id, 
@@ -100,9 +94,9 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
     }
     setEditingSubtask(null)
     setEditingTitle('')
-  }
+  }, [dispatch, task, editingTitle, editingSubtask])
 
-  const handleEditKeyDown = (e) => {
+  const handleEditKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       saveEditSubtask()
@@ -110,15 +104,24 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
       setEditingSubtask(null)
       setEditingTitle('')
     }
-  }
+  }, [saveEditSubtask])
+
+  const handleEditClick = useCallback(() => {
+    onClose()
+    if (onEdit) onEdit(task)
+  }, [onClose, onEdit, task])
+
+  const handleNewSubtaskKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddSubtask()
+    }
+  }, [handleAddSubtask])
+
+  if (!task) return null
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={t('tasks.details.title')}
-      size="large"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={t('tasks.details.title')} size="large">
       <div className="space-y-5">
         {/* عنوان و وضعیت */}
         <div>
@@ -139,15 +142,9 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               }`}
             >
               {task.completed ? (
-                <>
-                  <FiCheckCircle size={14} />
-                  <span>{t('tasks.status.completed')}</span>
-                </>
+                <><FiCheckCircle size={14} /><span>{t('tasks.status.completed')}</span></>
               ) : (
-                <>
-                  <FiCircle size={14} />
-                  <span>{t('tasks.status.pending')}</span>
-                </>
+                <><FiCircle size={14} /><span>{t('tasks.status.pending')}</span></>
               )}
             </button>
           </div>
@@ -155,13 +152,8 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
           <div className="flex items-center gap-3 flex-wrap">
             {project && (
               <div className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: project.color }}
-                ></div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {project.name}
-                </span>
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
+                <span className="text-sm text-gray-600 dark:text-gray-400">{project.name}</span>
               </div>
             )}
             <span className={`text-xs px-2 py-1 rounded-full ${priorityInfo.bgColor} ${priorityInfo.color}`}>
@@ -197,9 +189,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               <span>{t('tasks.form.tags')}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {task.tags.map(tag => (
-                <TagBadge key={tag} tag={tag} />
-              ))}
+              {task.tags.map(tag => <TagBadge key={tag} tag={tag} />)}
             </div>
           </div>
         )}
@@ -217,7 +207,6 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               </div>
             </div>
           )}
-
           {task.dueTime !== null && task.dueTime !== undefined && (
             <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
@@ -229,7 +218,6 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               </div>
             </div>
           )}
-
           {task.timeEstimate && (
             <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
               <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
@@ -241,7 +229,6 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               </div>
             </div>
           )}
-
           {task.actualTime > 0 && (
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
@@ -275,12 +262,10 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
               <div 
                 className={`h-2 rounded-full transition-all ${
-                  subtaskProgress === 100 
-                    ? 'bg-green-500' 
-                    : 'bg-gradient-to-l from-green-500 to-blue-500'
+                  subtaskProgress === 100 ? 'bg-green-500' : 'bg-gradient-to-l from-green-500 to-blue-500'
                 }`}
                 style={{ width: `${subtaskProgress}%` }}
-              ></div>
+              />
             </div>
           )}
 
@@ -291,10 +276,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
                   key={subtask.id}
                   className="flex items-center gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
                 >
-                  <button
-                    onClick={() => handleToggleSubtask(subtask.id)}
-                    className="flex-shrink-0"
-                  >
+                  <button onClick={() => handleToggleSubtask(subtask.id)} className="flex-shrink-0">
                     {subtask.completed ? (
                       <FiCheckCircle size={18} className="text-green-500" />
                     ) : (
@@ -327,18 +309,10 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
                   )}
                   
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    <button
-                      onClick={() => startEditSubtask(subtask)}
-                      className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 p-1"
-                      title={t('actions.edit')}
-                    >
+                    <button onClick={() => startEditSubtask(subtask)} className="text-gray-400 hover:text-blue-500 p-1">
                       <FiEdit2 size={14} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteSubtask(subtask.id)}
-                      className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1"
-                      title={t('actions.delete')}
-                    >
+                    <button onClick={() => handleDeleteSubtask(subtask.id)} className="text-gray-400 hover:text-red-500 p-1">
                       <FiTrash2 size={14} />
                     </button>
                   </div>
@@ -357,21 +331,11 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
               type="text"
               value={newSubtask}
               onChange={(e) => setNewSubtask(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleAddSubtask()
-                }
-              }}
+              onKeyDown={handleNewSubtaskKeyDown}
               placeholder={t('tasks.form.addSubtask')}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
             />
-            <Button
-              type="button"
-              onClick={handleAddSubtask}
-              disabled={!newSubtask.trim()}
-              size="small"
-            >
+            <Button type="button" onClick={handleAddSubtask} disabled={!newSubtask.trim()} size="small">
               <FiPlus size={14} />
             </Button>
           </div>
@@ -388,14 +352,10 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t('tasks.form.notesPlaceholder')}
             rows="3"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-sm"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-none text-sm"
           />
           <div className="flex justify-end mt-2">
-            <Button 
-              onClick={handleSaveNotes}
-              size="small"
-              disabled={notes === (task.notes || '')}
-            >
+            <Button onClick={handleSaveNotes} size="small" disabled={notes === (task.notes || '')}>
               <FiSave size={14} />
               <span>{t('actions.save')}</span>
             </Button>
@@ -404,21 +364,11 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
 
         {/* دکمه‌ها */}
         <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button 
-            onClick={() => {
-              onClose()
-              if (onEdit) onEdit(task)
-            }}
-            className="flex-1"
-          >
+          <Button onClick={handleEditClick} className="flex-1">
             <FiEdit2 size={16} />
             <span>{t('actions.edit')}</span>
           </Button>
-          <Button 
-            variant="secondary"
-            onClick={onClose}
-            className="flex-1"
-          >
+          <Button variant="secondary" onClick={onClose} className="flex-1">
             <FiChevronLeft size={16} />
             <span>{t('actions.close')}</span>
           </Button>
@@ -426,6 +376,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onEdit }) => {
       </div>
     </Modal>
   )
-}
+})
+TaskDetailsModal.displayName = 'TaskDetailsModal'
 
 export default TaskDetailsModal
