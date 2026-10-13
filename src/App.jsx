@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense, lazy } from 'react'
+import React, { useEffect, useState, Suspense, lazy, useRef } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { Provider, useDispatch } from 'react-redux'
 import { ToastContainer } from 'react-toastify'
@@ -23,18 +23,29 @@ const ProjectsPage = lazy(() => import('./features/projects/ProjectsPage'))
 const TasksPage = lazy(() => import('./features/tasks/TasksPage'))
 const HabitsPage = lazy(() => import('./features/habits/HabitsPage'))
 const NotesPage = lazy(() => import('./features/notes/NotesPage'))
+const GoalsPage = lazy(() => import('./features/goals/GoalsPage'))
 const AnalyticsPage = lazy(() => import('./features/analytics/AnalyticsPage'))
 const PlanningPage = lazy(() => import('./features/planning/PlanningPage'))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
 const AchievementsPage = lazy(() => import('./features/achievements/AchievementsPage'))
+const GrowthPage = lazy(() => import('./features/growth/GrowthPage'))
 
 function NotFound() {
   return (
     <div className="text-center py-12">
+      <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+        <span className="text-4xl">🔍</span>
+      </div>
       <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
         صفحه پیدا نشد
       </h1>
-      <a href="/" className="text-blue-600 hover:underline">
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        صفحه‌ای که به دنبال آن هستید وجود ندارد
+      </p>
+      <a
+        href="/"
+        className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+      >
         بازگشت به داشبورد
       </a>
     </div>
@@ -46,6 +57,9 @@ function AppContent() {
   const location = useLocation()
   const [showSearch, setShowSearch] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
+
+  // ✅ FIX: محافظ برای جلوگیری از اجرای دوباره در StrictMode
+  const recurringInitRef = useRef(false)
 
   useEffect(() => {
     initializeTheme()
@@ -60,22 +74,26 @@ function AppContent() {
     }
   }, [])
 
+  // ✅ FIX: generateRecurringTasks فقط یک بار در هر mount اجرا بشه
   useEffect(() => {
+    if (recurringInitRef.current) return
+    recurringInitRef.current = true
+
     dispatch(generateRecurringTasks())
+
     const interval = setInterval(() => {
       dispatch(generateRecurringTasks())
     }, 60 * 60 * 1000)
+
     return () => clearInterval(interval)
   }, [dispatch])
 
-  // ✅ وقتی کاربر وارد TasksPage میشه، زمان بازدید رو ذخیره کن
   useEffect(() => {
     if (location.pathname === '/tasks') {
       localStorage.setItem('smart-planner-tasks-viewed-at', new Date().toISOString())
     }
   }, [location.pathname])
 
-  // ✅ شورتکات‌های کیبورد (با e.code برای پشتیبانی کامل)
   useEffect(() => {
     const handleKeyDown = (e) => {
       const target = e.target
@@ -83,7 +101,6 @@ function AppContent() {
       const isContentEditable = target?.isContentEditable
       const isInInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select' || isContentEditable
 
-      // Ctrl+K یا Cmd+K → جستجو
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyK') {
         e.preventDefault()
         setShowSearch(prev => !prev)
@@ -92,14 +109,12 @@ function AppContent() {
 
       if (isInInput) return
 
-      // "/" → جستجو
       if (e.code === 'Slash') {
         e.preventDefault()
         setShowSearch(true)
         return
       }
 
-      // "N" → Quick Add (با e.code)
       if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault()
         setShowQuickAdd(true)
@@ -113,7 +128,7 @@ function AppContent() {
 
   return (
     <React.Fragment>
-      <AppLayout 
+      <AppLayout
         onOpenSearch={() => setShowSearch(true)}
         onOpenQuickAdd={() => setShowQuickAdd(true)}
       >
@@ -128,23 +143,25 @@ function AppContent() {
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/habits" element={<HabitsPage />} />
             <Route path="/notes" element={<NotesPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/planning" element={<PlanningPage />} />
             <Route path="/achievements" element={<AchievementsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/growth" element={<GrowthPage />} />
           </Routes>
         </Suspense>
       </AppLayout>
 
-      <GlobalSearch 
-        isOpen={showSearch} 
-        onClose={() => setShowSearch(false)} 
+      <GlobalSearch
+        isOpen={showSearch}
+        onClose={() => setShowSearch(false)}
       />
 
-      <QuickAddTask 
-        isOpen={showQuickAdd} 
-        onClose={() => setShowQuickAdd(false)} 
+      <QuickAddTask
+        isOpen={showQuickAdd}
+        onClose={() => setShowQuickAdd(false)}
       />
 
       <FloatingQuickAdd onClick={() => setShowQuickAdd(true)} />

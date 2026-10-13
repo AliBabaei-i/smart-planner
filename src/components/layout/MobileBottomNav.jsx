@@ -2,14 +2,13 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
-import { FiHome, FiCheckSquare, FiPlus, FiCalendar, FiBarChart2 } from 'react-icons/fi'
+import { FiHome, FiCheckSquare, FiPlus, FiTarget, FiBarChart2 } from 'react-icons/fi'
 
 const MobileBottomNav = ({ onOpenQuickAdd }) => {
   const { t } = useTranslation()
   const location = useLocation()
   const { tasks = [] } = useSelector(state => state.tasks)
-  
-  // ✅ Badge: کارهای جدید (مشابه Sidebar)
+
   const lastViewedAt = localStorage.getItem('smart-planner-tasks-viewed-at')
   const newTasksCount = tasks.filter(t => {
     if (t.completed) return false
@@ -21,14 +20,14 @@ const MobileBottomNav = ({ onOpenQuickAdd }) => {
 
   const menuItems = [
     { path: '/', label: t('nav.dashboard'), Icon: FiHome },
-    { 
-      path: '/tasks', 
-      label: t('nav.tasks'), 
-      Icon: FiCheckSquare, 
-      badge: showBadge ? newTasksCount : 0 
+    {
+      path: '/tasks',
+      label: t('nav.tasks'),
+      Icon: FiCheckSquare,
+      badge: showBadge ? newTasksCount : 0
     },
     { isCenter: true, onClick: onOpenQuickAdd },
-    { path: '/planning', label: t('nav.planning'), Icon: FiCalendar },
+    { path: '/goals', label: t('nav.goals'), Icon: FiTarget },
     { path: '/analytics', label: t('nav.analytics'), Icon: FiBarChart2 },
   ]
 
@@ -53,7 +52,7 @@ const MobileBottomNav = ({ onOpenQuickAdd }) => {
 
           const IconComponent = item.Icon
           const active = isActive(item.path)
-          
+
           return (
             <Link
               key={item.path}

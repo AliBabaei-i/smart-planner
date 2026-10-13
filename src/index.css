@@ -1,5 +1,5 @@
-@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'); */
 
 @tailwind base;
 @tailwind components;
@@ -30,7 +30,32 @@
   --scrollbar-thumb: #475569;
   --scrollbar-thumb-hover: #64748b;
 }
+/* ✅ سراسری برای همه select ها — بدون قید RTL */
+select,
+select option,
+select optgroup,
+select optgroup option {
+  font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+}
 
+html[dir="rtl"] select,
+html[dir="rtl"] select option,
+html[dir="rtl"] select optgroup,
+html[dir="rtl"] select optgroup option {
+  direction: rtl !important;
+  font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif !important;
+}
+
+html[dir="ltr"] select,
+html[dir="ltr"] select option,
+html[dir="ltr"] select optgroup,
+html[dir="ltr"] select optgroup option {
+  direction: ltr !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
 /* ============================================
    ✅ جهت و پایه
    ============================================ */

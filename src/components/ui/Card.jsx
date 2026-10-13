@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { memo } from 'react'
 
-const Card = ({ children, className = '', ...props }) => {
+const Card = memo(({ children, className = '', ...props }) => {
   return (
     <div
       className={`
@@ -13,6 +13,7 @@ const Card = ({ children, className = '', ...props }) => {
       {children}
     </div>
   )
-}
+})
+Card.displayName = 'Card'
 
 export default Card

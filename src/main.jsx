@@ -5,10 +5,18 @@ import './index.css'
 import './i18n/config' 
 import { initializeTheme } from './features/theme/themeSlice'
 
-// ✅ اعمال تم قبل از رندر
 initializeTheme()
+
+// ✅ FIX: StrictMode فقط در production فعال باشه
+// (در dev خاموشه تا از double-effect جلوگیری بشه)
+const isDev = import.meta.env.DEV
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  isDev ? (
     <App />
-  </React.StrictMode>,
+  ) : (
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  )
 )

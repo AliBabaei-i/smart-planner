@@ -1,35 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
-  FiCheckCircle,
-  FiCircle,
-  FiZap,
-  FiAward,
-  FiTrendingUp,
-  FiArchive,
-  FiActivity,
-  // ✅ آیکون‌های عادت
-  FiDroplet,
-  FiBook,
-  FiFeather,
-  FiSun,
-  FiSunrise,
-  FiMoon,
-  FiEdit3,
-  FiTarget
+  FiPlus, FiEdit2, FiTrash2, FiCheckCircle, FiCircle, FiZap, FiAward,
+  FiTrendingUp, FiArchive, FiActivity, FiDroplet, FiBook, FiFeather,
+  FiSun, FiSunrise, FiMoon, FiEdit3, FiTarget
 } from 'react-icons/fi'
 import {
-  addHabit,
-  updateHabit,
-  deleteHabit,
-  toggleArchiveHabit,
-  toggleCompletion,
-  habitHelpers
+  addHabit, updateHabit, deleteHabit, toggleArchiveHabit,
+  toggleCompletion, habitHelpers
 } from './habitsSlice'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
@@ -42,30 +22,17 @@ import { getPersianDayNumber } from '../../utils/persianDate'
 
 const { calculateStreak, calculateLongestStreak, HABIT_COLORS, HABIT_ICON_OPTIONS } = habitHelpers
 
-// ✅ Map نام آیکون به کامپوننت
 const ICON_MAP = {
-  FiDroplet,
-  FiBook,
-  FiActivity,
-  FiFeather,
-  FiZap,
-  FiSun,
-  FiSunrise,
-  FiMoon,
-  FiEdit3,
-  FiTarget
+  FiDroplet, FiBook, FiActivity, FiFeather, FiZap,
+  FiSun, FiSunrise, FiMoon, FiEdit3, FiTarget
 }
 
-// ✅ دریافت کامپوننت آیکون
 const getHabitIcon = (iconId) => {
   const option = HABIT_ICON_OPTIONS.find(o => o.id === iconId)
-  if (option && ICON_MAP[option.Icon]) {
-    return ICON_MAP[option.Icon]
-  }
+  if (option && ICON_MAP[option.Icon]) return ICON_MAP[option.Icon]
   return FiTarget
 }
 
-// ✅ دریافت رشته تاریخ محلی (نه UTC)
 const getLocalDateStr = (date) => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -73,19 +40,17 @@ const getLocalDateStr = (date) => {
   return `${year}-${month}-${day}`
 }
 
-// ✅ دریافت ۷ روز اخیر
 const getLast7Days = () => {
   const days = []
   for (let i = 6; i >= 0; i--) {
     const date = new Date()
-    date.setHours(12, 0, 0, 0) // ✅ تنظیم ساعت به ۱۲ برای جلوگیری از مشکل timezone
+    date.setHours(12, 0, 0, 0)
     date.setDate(date.getDate() - i)
     days.push(date)
   }
   return days
 }
 
-// ✅ فرمت روز هفته
 const getDayLabel = (date, lang) => {
   const days = lang === 'fa' || lang?.startsWith('fa')
     ? ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
@@ -93,13 +58,118 @@ const getDayLabel = (date, lang) => {
   return days[date.getDay()]
 }
 
-// ✅ دریافت شماره روز (شمسی یا میلادی)
 const getDayNumber = (date, lang) => {
-  if (lang === 'fa' || lang?.startsWith('fa')) {
-    return getPersianDayNumber(date)
-  }
+  if (lang === 'fa' || lang?.startsWith('fa')) return getPersianDayNumber(date)
   return date.getDate()
 }
+
+// ✅ کامپوننت HabitCard جدا + memo شده
+const HabitCard = memo(({
+  habit, streak, longestStreak, habitCompletions,
+  weekDays, today, i18nLanguage, t,
+  onToggle, onEdit, onDelete, onArchive
+}) => {
+  const HabitIcon = getHabitIcon(habit.iconId)
+
+  return (
+    <Card className="p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div 
+            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${habit.color}20` }}
+          >
+            <HabitIcon size={22} style={{ color: habit.color }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                {habit.name}
+              </h3>
+              {streak > 0 && (
+                <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full flex items-center gap-1">
+                  <FiZap size={10} />
+                  <span>{formatNumber(streak)} {t('habits.days')}</span>
+                </span>
+              )}
+              {streak >= 7 && <FiAward size={14} className="text-yellow-500" />}
+            </div>
+            {habit.description && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                {habit.description}
+              </p>
+            )}
+            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <FiTrendingUp size={10} />
+                {t('habits.longest')}: {formatNumber(longestStreak)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => onEdit(habit)}
+            className="text-gray-400 hover:text-blue-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FiEdit2 size={16} />
+          </button>
+          <button
+            onClick={() => onArchive(habit)}
+            className="text-gray-400 hover:text-purple-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FiArchive size={16} />
+          </button>
+          <button
+            onClick={() => onDelete(habit)}
+            className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FiTrash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+        {weekDays.map((date) => {
+          const dateStr = getLocalDateStr(date)
+          const isCompleted = habitCompletions[dateStr]
+          const isToday = dateStr === today
+          const dayLabel = getDayLabel(date, i18nLanguage)
+          const dayNumber = getDayNumber(date, i18nLanguage)
+
+          return (
+            <button
+              key={dateStr}
+              onClick={() => onToggle(habit.id, dateStr)}
+              className={`
+                flex-1 flex flex-col items-center gap-1 p-2 rounded-lg
+                transition-all hover:scale-105
+                ${isCompleted ? 'bg-opacity-100' : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                ${isToday ? 'ring-2 ring-blue-500' : ''}
+              `}
+              style={isCompleted ? { backgroundColor: habit.color } : {}}
+              title={formatDateByLang(date)}
+            >
+              <span className={`text-xs font-medium ${isCompleted ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                {dayLabel}
+              </span>
+              <span className={`text-sm font-bold ${isCompleted ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                {formatNumber(dayNumber)}
+              </span>
+              {isCompleted ? (
+                <FiCheckCircle size={14} className="text-white" />
+              ) : (
+                <FiCircle size={14} className="text-gray-300 dark:text-gray-600" />
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </Card>
+  )
+})
+HabitCard.displayName = 'HabitCard'
 
 const HabitsPage = () => {
   const { t, i18n } = useTranslation()
@@ -111,51 +181,81 @@ const HabitsPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, habitId: null, habitName: '' })
   const [showArchived, setShowArchived] = useState(false)
 
-  const weekDays = getLast7Days()
-  const today = getLocalDateStr(new Date())
+  // ✅ useMemo: weekDays (فقط یک بار ساخته می‌شه)
+  const weekDays = useMemo(() => getLast7Days(), [])
+  const today = useMemo(() => getLocalDateStr(new Date()), [])
 
-  const visibleHabits = habits.filter(h => showArchived ? h.archived : !h.archived)
-  const activeHabits = habits.filter(h => !h.archived)
-  const totalStreak = activeHabits.reduce((sum, h) => {
-    return sum + calculateStreak(h.id, completions)
-  }, 0)
-  const totalCompletedToday = activeHabits.filter(h => completions[h.id]?.[today]).length
+  // ✅ useMemo: visible habits
+  const visibleHabits = useMemo(
+    () => habits.filter(h => showArchived ? h.archived : !h.archived),
+    [habits, showArchived]
+  )
 
-  const handleToggle = (habitId, dateStr) => {
+  // ✅ useMemo: آمار
+  const { activeHabits, totalStreak, totalCompletedToday } = useMemo(() => {
+    const active = habits.filter(h => !h.archived)
+    const streakSum = active.reduce((sum, h) => sum + calculateStreak(h.id, completions), 0)
+    const completedToday = active.filter(h => completions[h.id]?.[today]).length
+    return { activeHabits: active, totalStreak: streakSum, totalCompletedToday: completedToday }
+  }, [habits, completions, today])
+
+  // ✅ useMemo: streak و longestStreak برای هر habit (cache می‌شه)
+  const habitStats = useMemo(() => {
+    const map = new Map()
+    for (const h of visibleHabits) {
+      map.set(h.id, {
+        streak: calculateStreak(h.id, completions),
+        longestStreak: calculateLongestStreak(h.id, completions),
+        habitCompletions: completions[h.id] || {}
+      })
+    }
+    return map
+  }, [visibleHabits, completions])
+
+  // ✅ useCallback: هندلرها
+  const handleToggle = useCallback((habitId, dateStr) => {
     dispatch(toggleCompletion({ habitId, date: dateStr }))
-  }
+  }, [dispatch])
 
-  const handleEdit = (habit) => {
+  const handleEdit = useCallback((habit) => {
     setEditingHabit(habit)
     setShowForm(true)
-  }
+  }, [])
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     setEditingHabit(null)
     setShowForm(true)
-  }
+  }, [])
 
-  const handleCloseForm = () => {
+  const handleCloseForm = useCallback(() => {
     setShowForm(false)
     setEditingHabit(null)
-  }
+  }, [])
 
-  const handleDelete = (habit) => {
-    setDeleteConfirm({
-      isOpen: true,
-      habitId: habit.id,
-      habitName: habit.name
-    })
-  }
+  const handleDelete = useCallback((habit) => {
+    setDeleteConfirm({ isOpen: true, habitId: habit.id, habitName: habit.name })
+  }, [])
 
-  const confirmDelete = () => {
+  const handleArchive = useCallback((habit) => {
+    dispatch(toggleArchiveHabit(habit.id))
+  }, [dispatch])
+
+  const confirmDelete = useCallback(() => {
     dispatch(deleteHabit(deleteConfirm.habitId))
     toast.success(`${deleteConfirm.habitName} - ${t('actions.delete')}`, {
       position: "bottom-left",
       autoClose: 3000,
     })
     setDeleteConfirm({ isOpen: false, habitId: null, habitName: '' })
-  }
+  }, [dispatch, deleteConfirm, t])
+
+  const closeDeleteConfirm = useCallback(() => {
+    setDeleteConfirm({ isOpen: false, habitId: null, habitName: '' })
+  }, [])
+
+  const toggleShowArchived = useCallback(() => {
+    setShowArchived(prev => !prev)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -173,7 +273,7 @@ const HabitsPage = () => {
         <div className="flex items-center gap-2">
           <Button 
             variant={showArchived ? 'primary' : 'secondary'}
-            onClick={() => setShowArchived(!showArchived)}
+            onClick={toggleShowArchived}
             size="small"
           >
             <FiArchive size={14} />
@@ -241,116 +341,23 @@ const HabitsPage = () => {
       {visibleHabits.length > 0 ? (
         <div className="space-y-3">
           {visibleHabits.map(habit => {
-            const streak = calculateStreak(habit.id, completions)
-            const longestStreak = calculateLongestStreak(habit.id, completions)
-            const habitCompletions = completions[habit.id] || {}
-            const HabitIcon = getHabitIcon(habit.iconId)
-
+            const stat = habitStats.get(habit.id) || { streak: 0, longestStreak: 0, habitCompletions: {} }
             return (
-              <Card key={habit.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${habit.color}20` }}
-                    >
-                      <HabitIcon 
-                        size={22} 
-                        style={{ color: habit.color }} 
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                          {habit.name}
-                        </h3>
-                        {streak > 0 && (
-                          <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full flex items-center gap-1">
-                            <FiZap size={10} />
-                            <span>{formatNumber(streak)} {t('habits.days')}</span>
-                          </span>
-                        )}
-                        {streak >= 7 && (
-                          <FiAward size={14} className="text-yellow-500" />
-                        )}
-                      </div>
-                      {habit.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                          {habit.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <FiTrendingUp size={10} />
-                          {t('habits.longest')}: {formatNumber(longestStreak)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => handleEdit(habit)}
-                      className="text-gray-400 hover:text-blue-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title={t('actions.edit')}
-                    >
-                      <FiEdit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => dispatch(toggleArchiveHabit(habit.id))}
-                      className="text-gray-400 hover:text-purple-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title={t('habits.archive')}
-                    >
-                      <FiArchive size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(habit)}
-                      className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title={t('actions.delete')}
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* نمای هفتگی */}
-                <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  {weekDays.map((date) => {
-                    const dateStr = getLocalDateStr(date)
-                    const isCompleted = habitCompletions[dateStr]
-                    const isToday = dateStr === today
-                    const dayLabel = getDayLabel(date, i18n.language)
-                    const dayNumber = getDayNumber(date, i18n.language)
-
-                    return (
-                      <button
-                        key={dateStr}
-                        onClick={() => handleToggle(habit.id, dateStr)}
-                        className={`
-                          flex-1 flex flex-col items-center gap-1 p-2 rounded-lg
-                          transition-all hover:scale-105
-                          ${isCompleted ? 'bg-opacity-100' : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'}
-                          ${isToday ? 'ring-2 ring-blue-500' : ''}
-                        `}
-                        style={isCompleted ? { backgroundColor: habit.color } : {}}
-                        title={formatDateByLang(date)}
-                      >
-                        <span className={`text-xs font-medium ${isCompleted ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                          {dayLabel}
-                        </span>
-                        <span className={`text-sm font-bold ${isCompleted ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
-                          {formatNumber(dayNumber)}
-                        </span>
-                        {isCompleted ? (
-                          <FiCheckCircle size={14} className="text-white" />
-                        ) : (
-                          <FiCircle size={14} className="text-gray-300 dark:text-gray-600" />
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </Card>
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                streak={stat.streak}
+                longestStreak={stat.longestStreak}
+                habitCompletions={stat.habitCompletions}
+                weekDays={weekDays}
+                today={today}
+                i18nLanguage={i18n.language}
+                t={t}
+                onToggle={handleToggle}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
+              />
             )
           })}
         </div>
@@ -374,21 +381,17 @@ const HabitsPage = () => {
         </Card>
       )}
 
-      {/* Modal */}
       <Modal
         isOpen={showForm}
         onClose={handleCloseForm}
         title={editingHabit ? t('habits.form.editTitle') : t('habits.form.createTitle')}
       >
-        <HabitForm 
-          habit={editingHabit}
-          onClose={handleCloseForm}
-        />
+        <HabitForm habit={editingHabit} onClose={handleCloseForm} />
       </Modal>
 
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, habitId: null, habitName: '' })}
+        onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title={t('actions.delete')}
         message={`"${deleteConfirm.habitName}"? ${t('habits.deleteWarning')}`}
@@ -399,6 +402,10 @@ const HabitsPage = () => {
     </div>
   )
 }
+
+
+
+
 
 // ✅ فرم عادت
 const HabitForm = ({ habit, onClose }) => {
@@ -534,4 +541,4 @@ const HabitForm = ({ habit, onClose }) => {
   )
 }
 
-export default HabitsPage
+export default memo(HabitsPage)
