@@ -30,6 +30,7 @@ const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
 const AchievementsPage = lazy(() => import('./features/achievements/AchievementsPage'))
 const GrowthPage = lazy(() => import('./features/growth/GrowthPage'))
 const FinancePage = lazy(() => import('./features/finance/FinancePage'))
+
 function NotFound() {
   return (
     <div className="text-center py-12">
@@ -58,15 +59,24 @@ function AppContent() {
   const [showSearch, setShowSearch] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
 
-  // ✅ FIX: محافظ برای جلوگیری از اجرای دوباره در StrictMode
+  // ✅ Guard refs برای جلوگیری از اجرای دوباره در StrictMode
+  const themeInitRef = useRef(false)
+  const reminderInitRef = useRef(false)
   const recurringInitRef = useRef(false)
 
   useEffect(() => {
+    if (themeInitRef.current) return
+    themeInitRef.current = true
     initializeTheme()
   }, [])
 
   useEffect(() => {
-    if (reminderService.started) return
+    if (reminderInitRef.current) return
+    if (reminderService.started) {
+      reminderInitRef.current = true
+      return
+    }
+    reminderInitRef.current = true
     try {
       reminderService.start()
     } catch (error) {
@@ -74,7 +84,6 @@ function AppContent() {
     }
   }, [])
 
-  // ✅ FIX: generateRecurringTasks فقط یک بار در هر mount اجرا بشه
   useEffect(() => {
     if (recurringInitRef.current) return
     recurringInitRef.current = true
@@ -148,25 +157,16 @@ function AppContent() {
             <Route path="/planning" element={<PlanningPage />} />
             <Route path="/achievements" element={<AchievementsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
             <Route path="/growth" element={<GrowthPage />} />
             <Route path="/finance" element={<FinancePage />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </AppLayout>
 
-      <GlobalSearch
-        isOpen={showSearch}
-        onClose={() => setShowSearch(false)}
-      />
-
-      <QuickAddTask
-        isOpen={showQuickAdd}
-        onClose={() => setShowQuickAdd(false)}
-      />
-
+      <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
+      <QuickAddTask isOpen={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
       <FloatingQuickAdd onClick={() => setShowQuickAdd(true)} />
-
       <PomodoroWidget />
       <AchievementNotification />
       <OfflineIndicator />
