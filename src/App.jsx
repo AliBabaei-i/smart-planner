@@ -29,7 +29,7 @@ const PlanningPage = lazy(() => import('./features/planning/PlanningPage'))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
 const AchievementsPage = lazy(() => import('./features/achievements/AchievementsPage'))
 const GrowthPage = lazy(() => import('./features/growth/GrowthPage'))
-
+const FinancePage = lazy(() => import('./features/finance/FinancePage'))
 function NotFound() {
   return (
     <div className="text-center py-12">
@@ -150,6 +150,7 @@ function AppContent() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
             <Route path="/growth" element={<GrowthPage />} />
+            <Route path="/finance" element={<FinancePage />} />
           </Routes>
         </Suspense>
       </AppLayout>

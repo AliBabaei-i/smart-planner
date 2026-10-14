@@ -4,42 +4,31 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import { v4 as uuidv4 } from 'uuid'
 import {
-  FiSave,
-  FiPlus,
-  FiX,
-  FiCheckCircle,
-  FiCircle,
-  FiRepeat,
-  FiList,
-  FiTag,
-  FiCalendar,
-  FiClock,
-  FiFlag,
-  FiFolder,
-  FiEdit3,
-  FiChevronDown,
-  FiChevronUp
+  FiSave, FiPlus, FiX, FiCheckCircle, FiCircle,
+  FiRepeat, FiList, FiTag, FiCalendar, FiClock,
+  FiFlag, FiFolder, FiDollarSign, FiChevronDown, FiChevronUp
 } from 'react-icons/fi'
 import { addTask, updateTask } from './tasksSlice'
 import { onTaskCreated, onTagAdded } from '../achievements/achievementsSlice'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
-import Card from '../../components/ui/Card'
 import FormSelect from '../../components/ui/FormSelect'
 import FormTextarea from '../../components/ui/FormTextarea'
 import DatePicker from '../../components/ui/DatePicker'
+import CurrencyInput from '../finance/CurrencyInput'
 import ProjectSelect from './ProjectSelect'
 import TagInput from './TagInput'
 import { PRIORITY_OPTIONS } from '../../constants/priorities'
 
 const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const dispatch = useDispatch()
   const { projects = [] } = useSelector(state => state.projects)
   const isEditMode = !!editTask
+  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  // ✅ state برای باز/بسته کردن بخش‌ها
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showFinancial, setShowFinancial] = useState(!!editTask?.financialCost)
 
   const getInitialFormData = useCallback(() => {
     if (editTask) {
@@ -54,7 +43,9 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         tags: editTask.tags || [],
         subtasks: editTask.subtasks || [],
         recurring: editTask.recurring || '',
-        recurringEndDate: editTask.recurringEndDate || ''
+        recurringEndDate: editTask.recurringEndDate || '',
+        financialCost: editTask.financialCost || '',
+        financialCategory: editTask.financialCategory || ''
       }
     }
     return {
@@ -68,7 +59,9 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
       tags: initialData.tags || [],
       subtasks: initialData.subtasks || [],
       recurring: initialData.recurring || '',
-      recurringEndDate: initialData.recurringEndDate || ''
+      recurringEndDate: initialData.recurringEndDate || '',
+      financialCost: '',
+      financialCategory: ''
     }
   }, [editTask, initialData, projectId])
 
@@ -82,7 +75,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
     }
   }, [editTask, getInitialFormData])
 
-  // ✅ ✅ ساعت ۰ تا ۲۳ (۲۴ ساعت کامل)
+  // ✅ ساعت ۰ تا ۲۳
   const hourOptions = useMemo(() => 
     Array.from({ length: 24 }, (_, i) => i).map(hour => ({
       value: hour,
@@ -105,14 +98,21 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
     { value: 'monthly', label: t('tasks.form.monthly') }
   ], [t])
 
+  const financialCategoryOptions = useMemo(() => [
+    { value: 'equipment', label: isPersian ? 'تجهیزات' : 'Equipment' },
+    { value: 'materials', label: isPersian ? 'مواد و متریال' : 'Materials' },
+    { value: 'service', label: isPersian ? 'خدمات' : 'Service' },
+    { value: 'subscription', label: isPersian ? 'اشتراک' : 'Subscription' },
+    { value: 'travel', label: isPersian ? 'سفر' : 'Travel' },
+    { value: 'other_expense', label: isPersian ? 'سایر' : 'Other' }
+  ], [isPersian])
+
   const subtaskStats = useMemo(() => ({
     total: formData.subtasks.length,
     completed: formData.subtasks.filter(st => st.completed).length
   }), [formData.subtasks])
 
-  // ═══════════════════════════════════════════
   // ✅ هندلرها
-  // ═══════════════════════════════════════════
   const handleChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }, [])
@@ -187,7 +187,12 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         tags: formData.tags || [],
         subtasks: formData.subtasks || [],
         recurring: formData.recurring || null,
-        recurringEndDate: formData.recurringEndDate || null
+        recurringEndDate: formData.recurringEndDate || null,
+        // ✅ فیلدهای مالی
+        financialCost: formData.financialCost && parseFloat(formData.financialCost) > 0
+          ? parseFloat(formData.financialCost)
+          : null,
+        financialCategory: formData.financialCost ? (formData.financialCategory || 'other_expense') : null
       }
 
       if (isEditMode) {
@@ -220,8 +225,11 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
           tags: [],
           subtasks: [],
           recurring: '',
-          recurringEndDate: ''
+          recurringEndDate: '',
+          financialCost: '',
+          financialCategory: ''
         })
+        setShowFinancial(false)
       }
       if (onClose) onClose()
     } catch (error) {
@@ -238,11 +246,10 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* 📝 اطلاعات اصلی                            */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* 📝 اطلاعات اصلی */}
+      {/* ═══════════════════════════════════ */}
       <div className="space-y-4">
-        {/* عنوان */}
         <Input
           label={`${t('tasks.form.title')} *`}
           value={formData.title}
@@ -252,7 +259,6 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
           autoFocus
         />
 
-        {/* توضیحات */}
         <FormTextarea
           label={t('tasks.form.description')}
           value={formData.description}
@@ -262,16 +268,15 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         />
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* 🎯 تنظیمات کار                             */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* 🎯 تنظیمات کار */}
+      {/* ═══════════════════════════════════ */}
       <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 pb-2 border-b border-gray-200 dark:border-gray-700">
           <FiCalendar size={14} />
-          <span>{t('tasks.form.settings') || 'تنظیمات کار'}</span>
+          <span>{t('tasks.form.settings') || (isPersian ? 'تنظیمات کار' : 'Task Settings')}</span>
         </div>
 
-        {/* پروژه + اولویت */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -288,23 +293,20 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
             />
           </div>
 
-          <div>
-            <FormSelect
-              label={t('tasks.form.priority')}
-              value={formData.priority}
-              onChange={(e) => handleChange('priority', e.target.value)}
-              options={priorityOptions}
-            />
-          </div>
+          <FormSelect
+            label={t('tasks.form.priority')}
+            value={formData.priority}
+            onChange={(e) => handleChange('priority', e.target.value)}
+            options={priorityOptions}
+          />
         </div>
 
-        {/* تاریخ + ساعت + زمان */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <DatePicker
             label={t('tasks.form.dueDate')}
             value={formData.dueDate}
             onChange={(e) => handleChange('dueDate', e.target.value)}
-            placeholder={t('tasks.form.selectDate') || 'انتخاب تاریخ'}
+            placeholder={isPersian ? 'انتخاب تاریخ' : 'Select date'}
           />
 
           <FormSelect
@@ -316,7 +318,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 whitespace-nowrap">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <span className="flex items-center gap-1.5">
                 <FiClock size={12} />
                 {t('tasks.form.timeEstimate')}
@@ -328,16 +330,79 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
               onChange={(e) => handleChange('timeEstimate', e.target.value)}
               placeholder="60"
               min="1"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-center"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
               style={{ fontFamily: 'inherit' }}
             />
           </div>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* 🏷️ برچسب‌ها                                */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* 💰 بخش مالی */}
+      {/* ═══════════════════════════════════ */}
+      <div className="border border-amber-200 dark:border-amber-800 rounded-lg overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowFinancial(prev => !prev)}
+          className="w-full flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+            <FiDollarSign size={14} />
+            <span>{isPersian ? 'هزینه مالی (اختیاری)' : 'Financial Cost (optional)'}</span>
+            {formData.financialCost && parseFloat(formData.financialCost) > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200">
+                {isPersian ? 'فعال' : 'Active'}
+              </span>
+            )}
+          </div>
+          {showFinancial ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+        </button>
+
+        {showFinancial && (
+          <div className="p-4 border-t border-amber-200 dark:border-amber-800 space-y-3">
+            <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+              {isPersian 
+                ? 'اگر این کار هزینه مالی دارد (مثل خرید تجهیزات)، اینجا وارد کن. هنگام انجام تسک، تراکنش هزینه به صورت خودکار ثبت می‌شود.'
+                : 'If this task has a financial cost (like buying equipment), enter it here. When the task is completed, an expense transaction will be recorded automatically.'}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <CurrencyInput
+                label={isPersian ? 'مبلغ هزینه' : 'Amount'}
+                value={formData.financialCost}
+                onChange={(e) => handleChange('financialCost', e.target.value)}
+                currency="IRR"
+              />
+
+              {formData.financialCost && parseFloat(formData.financialCost) > 0 && (
+                <FormSelect
+                  label={isPersian ? 'دسته‌بندی' : 'Category'}
+                  value={formData.financialCategory || 'other_expense'}
+                  onChange={(e) => handleChange('financialCategory', e.target.value)}
+                  options={financialCategoryOptions}
+                />
+              )}
+            </div>
+
+            {formData.financialCost && parseFloat(formData.financialCost) > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  handleChange('financialCost', '')
+                  handleChange('financialCategory', '')
+                }}
+                className="text-xs text-red-600 dark:text-red-400 hover:underline"
+              >
+                {isPersian ? 'حذف هزینه مالی' : 'Remove financial cost'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════ */}
+      {/* 🏷️ برچسب‌ها */}
+      {/* ═══════════════════════════════════ */}
       <div>
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
           <FiTag size={14} />
@@ -349,9 +414,9 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         />
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* 🔄 تکرار — collapsible                     */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* 🔄 تکرار */}
+      {/* ═══════════════════════════════════ */}
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         <button
           type="button"
@@ -371,7 +436,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         </button>
 
         {showAdvanced && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormSelect
                 value={formData.recurring || ''}
@@ -385,7 +450,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
                   label={t('tasks.form.recurringEnd')}
                   value={formData.recurringEndDate || ''}
                   onChange={(e) => handleChange('recurringEndDate', e.target.value)}
-                  placeholder={t('tasks.form.selectDate') || 'انتخاب تاریخ'}
+                  placeholder={isPersian ? 'انتخاب تاریخ' : 'Select date'}
                 />
               )}
             </div>
@@ -393,9 +458,9 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* ✅ زیرتسک‌ها                                */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* ✅ زیرتسک‌ها */}
+      {/* ═══════════════════════════════════ */}
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
         <div className="flex items-center justify-between mb-3">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -451,8 +516,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
                 <button
                   type="button"
                   onClick={() => handleRemoveSubtask(subtask.id)}
-                  className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                  title={t('actions.delete')}
+                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
                 >
                   <FiX size={14} />
                 </button>
@@ -468,7 +532,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
             onChange={(e) => setNewSubtask(e.target.value)}
             onKeyDown={handleSubtaskKeyDown}
             placeholder={t('tasks.form.addSubtask')}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
           <Button
             type="button"
@@ -481,17 +545,11 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
             <span>{t('actions.add')}</span>
           </Button>
         </div>
-
-        {formData.subtasks.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            {t('tasks.form.subtaskHint')}
-          </p>
-        )}
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* دکمه‌ها                                     */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════ */}
+      {/* دکمه‌ها */}
+      {/* ═══════════════════════════════════ */}
       <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 pb-1">
         <Button
           type="submit"
@@ -512,12 +570,7 @@ const TaskForm = ({ projectId, onClose, initialData = {}, editTask = null }) => 
           )}
         </Button>
         {onClose && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            className="flex-1"
-          >
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             <FiX size={16} />
             <span>{t('actions.cancel')}</span>
           </Button>

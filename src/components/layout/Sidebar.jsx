@@ -12,7 +12,8 @@ import {
   FiCalendar,
   FiBarChart2,
   FiAward,
-  FiSettings
+  FiSettings,
+  FiDollarSign
 } from 'react-icons/fi'
 import { FiTrendingUp } from 'react-icons/fi'
 const Sidebar = ({ onItemClick }) => {
@@ -54,6 +55,7 @@ const Sidebar = ({ onItemClick }) => {
       Icon: FiAward,
       sublabel: achievements?.totalPoints ? `${achievements.totalPoints} ${t('achievements.points')}` : null
     },
+    { label: t('nav.finance'), path: '/finance', Icon: FiDollarSign },
     { path: '/settings', label: t('nav.settings'), Icon: FiSettings },
   ]
 
@@ -110,7 +112,7 @@ const Sidebar = ({ onItemClick }) => {
         </div>
       </nav>
 
-      <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="text-center text-xs text-gray-400 dark:text-gray-500">
           {t('app.name')} {t('app.version')}
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
+import { v4 as uuidv4 } from 'uuid'
 import {
   FiCheckSquare,
   FiPlus,
@@ -22,8 +23,10 @@ import {
   FiRepeat,
   FiColumns
 } from 'react-icons/fi'
-import { toggleTaskStatus, deleteTask } from './tasksSlice'
+import { toggleTaskStatus, deleteTask, linkTransactionToTask } from './tasksSlice'
 import { onTaskCompleted } from '../achievements/achievementsSlice'
+import { addTransaction } from '../finance/financeSlice'
+import { getTodayStr } from '../../utils/dateHelpers'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Input from '../../components/ui/Input'
@@ -91,6 +94,12 @@ const TaskCard = memo(({
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
                   <FiClock size={10} />
                   <span>{t('kanban.inProgress')}</span>
+                </span>
+              )}
+              {/* ✅ نشانگر هزینه مالی */}
+              {task.financialCost > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  💰 {task.financialCost.toLocaleString('fa-IR')}
                 </span>
               )}
             </div>
@@ -242,10 +251,14 @@ const TaskCard = memo(({
 TaskCard.displayName = 'TaskCard'
 
 const TasksPage = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const dispatch = useDispatch()
   const { tasks = [], availableTags = [] } = useSelector(state => state.tasks)
   const { projects = [] } = useSelector(state => state.projects)
+  const { accounts = [], transactions = [] } = useSelector(state => state.finance || {})
+  
+  // ✅ isPersian تعریف شد
+  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
   
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
@@ -272,7 +285,7 @@ const TasksPage = () => {
     return map
   }, [projects])
 
-  // ✅ useMemo: tag counts (قبلاً O(n*m) بود)
+  // ✅ useMemo: tag counts
   const tagCounts = useMemo(() => {
     const map = new Map()
     for (const task of tasks) {
@@ -291,12 +304,11 @@ const TasksPage = () => {
     )
   }, [availableTags, tagCounts])
 
-  // ✅ useMemo: filtered tasks (قبلاً در هر رندر)
+  // ✅ useMemo: filtered tasks
   const filteredTasks = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase().trim()
     
     return tasks.filter(task => {
-      // Search
       if (lowerSearch) {
         const titleMatch = task.title?.toLowerCase().includes(lowerSearch)
         const descMatch = task.description?.toLowerCase().includes(lowerSearch)
@@ -304,14 +316,11 @@ const TasksPage = () => {
         if (!titleMatch && !descMatch && !tagMatch) return false
       }
       
-      // Status
       if (filterStatus === 'completed' && !task.completed) return false
       if (filterStatus === 'pending' && task.completed) return false
       
-      // Project
       if (filterProject !== 'all' && task.projectId !== filterProject) return false
       
-      // Tag
       if (filterTag !== 'all' && (!task.tags || !task.tags.includes(filterTag))) return false
       
       return true
@@ -320,15 +329,69 @@ const TasksPage = () => {
 
   const hasActiveFilters = searchTerm || filterStatus !== 'all' || filterProject !== 'all' || filterTag !== 'all'
 
-  // ✅ useCallback: هندلرها
+  // ✅ ✅ ✅ تابع toggle با ثبت خودکار تراکنش
   const handleToggleTask = useCallback((taskId) => {
     const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    const willBeCompleted = !task.completed
+
+    // ✅ ۱. تغییر وضعیت تسک
     dispatch(toggleTaskStatus(taskId))
-    
-    if (task && !task.completed) {
+
+    // ✅ ۲. اگه تسک انجام شد و هزینه مالی داره
+    if (willBeCompleted && task.financialCost && task.financialCost > 0) {
+      // چک کن قبلاً تراکنش ثبت نشده باشه
+      const alreadyLinked = task.financialTransactionId || 
+        transactions.some(t => t.taskId === task.id && t.type === 'expense')
+
+      if (!alreadyLinked) {
+        // از اولین حساب فعال یا حساب پیش‌فرض
+        const defaultAccount = accounts.find(a => a.isActive && a.currency === 'IRR') 
+                            || accounts.find(a => a.isActive)
+
+        if (defaultAccount) {
+          const transactionId = uuidv4()
+          
+          dispatch(addTransaction({
+            id: transactionId,
+            accountId: defaultAccount.id,
+            type: 'expense',
+            amount: task.financialCost,
+            currency: 'IRR',
+            category: task.financialCategory || 'other_expense',
+            description: isPersian 
+              ? `هزینه کار: ${task.title}`
+              : `Task cost: ${task.title}`,
+            date: getTodayStr(),
+            taskId: task.id,
+            projectId: task.projectId
+          }))
+          
+          dispatch(linkTransactionToTask({ taskId: task.id, transactionId }))
+          
+          toast.info(
+            isPersian 
+              ? `💰 هزینه ${task.financialCost.toLocaleString('fa-IR')} ریال ثبت شد`
+              : `💰 Expense recorded: ${task.financialCost}`,
+            { position: 'bottom-left', autoClose: 3000 }
+          )
+        } else {
+          toast.warning(
+            isPersian 
+              ? '⚠️ برای ثبت خودکار هزینه، ابتدا یک حساب فعال بساز'
+              : '⚠️ Create an active account to auto-record expenses',
+            { position: 'bottom-left', autoClose: 4000 }
+          )
+        }
+      }
+    }
+
+    // ✅ ۳. دستاورد
+    if (willBeCompleted) {
       dispatch(onTaskCompleted({ actualTime: task.actualTime || 0 }))
     }
-  }, [dispatch, tasks])
+  }, [tasks, transactions, accounts, dispatch, isPersian])
 
   const handleCreate = useCallback(() => {
     setEditingTask(null)
@@ -633,11 +696,11 @@ const TasksPage = () => {
       )}
 
       <Modal
-  isOpen={showTaskForm}
-  onClose={handleCloseForm}
-  title={editingTask ? t('tasks.form.editTitle') : t('tasks.form.createTitle')}
-  size="xlarge"
->
+        isOpen={showTaskForm}
+        onClose={handleCloseForm}
+        size="xlarge"
+        title={editingTask ? t('tasks.form.editTitle') : t('tasks.form.createTitle')}
+      >
         <TaskForm onClose={handleCloseForm} editTask={editingTask} />
       </Modal>
 

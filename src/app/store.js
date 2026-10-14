@@ -11,7 +11,7 @@ import pomodoroReducer from '../features/pomodoro/pomodoroSlice'
 import dashboardReducer from '../features/dashboard/dashboardSlice'
 import achievementsReducer from '../features/achievements/achievementsSlice'
 import growthReducer from '../features/growth/growthSlice'
-
+import financeReducer from '../features/finance/financeSlice'
 
 // ✅ middleware برای ذخیره‌سازی خودکار در Local Storage
 const persistenceMiddleware = (store) => (next) => (action) => {
@@ -53,6 +53,9 @@ const persistenceMiddleware = (store) => (next) => (action) => {
         skills: state.growth.skills
       }))
     }
+    if (state.finance) {
+  localStorage.setItem('smart-planner-finance', JSON.stringify(state.finance))
+}
   } catch (error) {
     console.error('Error saving to localStorage:', error)
   }
@@ -120,7 +123,7 @@ const store = configureStore({
     pomodoro: pomodoroReducer,
     dashboard: dashboardReducer,
     achievements: achievementsReducer,
-    growth: growthReducer,
+    growth: growthReducer,finance: financeReducer,
   },
   preloadedState,
   middleware: (getDefaultMiddleware) =>

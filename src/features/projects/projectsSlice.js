@@ -12,30 +12,25 @@ const projectsSlice = createSlice({
   name: 'projects',
   initialState,
   reducers: {
-    // شروع لودینگ
-    setLoading: (state, action) => {
-      state.loading = action.payload
-    },
-    
-    // افزودن پروژه جدید
     addProject: (state, action) => {
       const newProject = {
         id: uuidv4(),
         name: action.payload.name,
-        description: action.payload.description,
+        description: action.payload.description || '',
         color: action.payload.color || '#3b82f6',
+        icon: action.payload.icon || 'folder',
+        // ✅ فیلدهای مالی
+        budget: action.payload.budget 
+          ? parseFloat(action.payload.budget) 
+          : null,
+        budgetCurrency: action.payload.budgetCurrency || 'IRR',
+        budgetPeriod: action.payload.budgetPeriod || 'total',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
       state.projects.push(newProject)
     },
-    
-    // حذف پروژه
-    deleteProject: (state, action) => {
-      state.projects = state.projects.filter(project => project.id !== action.payload)
-    },
-    
-    // آپدیت پروژه
+
     updateProject: (state, action) => {
       const index = state.projects.findIndex(project => project.id === action.payload.id)
       if (index !== -1) {
@@ -46,13 +41,19 @@ const projectsSlice = createSlice({
         }
       }
     },
-    
-    // ست کردن پروژه جاری
+
+    deleteProject: (state, action) => {
+      state.projects = state.projects.filter(project => project.id !== action.payload)
+    },
+
     setCurrentProject: (state, action) => {
       state.currentProject = action.payload
     },
-    
-    // ست کردن خطا
+
+    setLoading: (state, action) => {
+      state.loading = action.payload
+    },
+
     setError: (state, action) => {
       state.error = action.payload
     }
@@ -60,11 +61,11 @@ const projectsSlice = createSlice({
 })
 
 export const {
-  setLoading,
   addProject,
-  deleteProject,
   updateProject,
+  deleteProject,
   setCurrentProject,
+  setLoading,
   setError
 } = projectsSlice.actions
 

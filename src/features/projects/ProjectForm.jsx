@@ -2,31 +2,43 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
-import { FiSave, FiPlus, FiX } from 'react-icons/fi'
+import { FiSave, FiPlus, FiX, FiDollarSign } from 'react-icons/fi'
 import { addProject, updateProject } from './projectsSlice'
 import { onProjectCreated } from '../achievements/achievementsSlice'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Card from '../../components/ui/Card'
+import FormSelect from '../../components/ui/FormSelect'
+import CurrencyInput from '../finance/CurrencyInput'
 
 const ProjectForm = ({ onClose, editProject = null }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const dispatch = useDispatch()
   const isEditMode = !!editProject
-  
+  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
+
+  // ✅ State اولیه — با استفاده از editProject (نه project)
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    color: '#3b82f6'
+    name: editProject?.name || '',
+    description: editProject?.description || '',
+    color: editProject?.color || '#3b82f6',
+    // ✅ فیلدهای مالی
+    budget: editProject?.budget || '',
+    budgetCurrency: editProject?.budgetCurrency || 'IRR',
+    budgetPeriod: editProject?.budgetPeriod || 'total'
   })
   const [loading, setLoading] = useState(false)
 
+  // ✅ useEffect برای sync
   useEffect(() => {
     if (editProject) {
       setFormData({
         name: editProject.name || '',
         description: editProject.description || '',
-        color: editProject.color || '#3b82f6'
+        color: editProject.color || '#3b82f6',
+        budget: editProject.budget || '',
+        budgetCurrency: editProject.budgetCurrency || 'IRR',
+        budgetPeriod: editProject.budgetPeriod || 'total'
       })
     }
   }, [editProject])
@@ -35,6 +47,12 @@ const ProjectForm = ({ onClose, editProject = null }) => {
     '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
     '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
     '#f97316', '#6366f1', '#14b8a6', '#a855f7'
+  ]
+
+  const budgetPeriodOptions = [
+    { value: 'total', label: isPersian ? 'کل پروژه' : 'Total' },
+    { value: 'monthly', label: isPersian ? 'ماهانه' : 'Monthly' },
+    { value: 'weekly', label: isPersian ? 'هفتگی' : 'Weekly' }
   ]
 
   const handleSubmit = async (e) => {
@@ -49,17 +67,29 @@ const ProjectForm = ({ onClose, editProject = null }) => {
 
     setLoading(true)
     try {
+      // ✅ آماده‌سازی payload
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description,
+        color: formData.color,
+        budget: formData.budget && parseFloat(formData.budget) > 0
+          ? parseFloat(formData.budget)
+          : null,
+        budgetCurrency: formData.budgetCurrency,
+        budgetPeriod: formData.budgetPeriod
+      }
+
       if (isEditMode) {
         dispatch(updateProject({
           id: editProject.id,
-          ...formData
+          ...payload
         }))
         toast.success(`${formData.name} - ${t('actions.save')}`, {
           position: "bottom-left",
           autoClose: 3000,
         })
       } else {
-        dispatch(addProject(formData))
+        dispatch(addProject(payload))
         dispatch(onProjectCreated())
         toast.success(`${formData.name} - ${t('actions.create')}`, {
           position: "bottom-left",
@@ -67,7 +97,16 @@ const ProjectForm = ({ onClose, editProject = null }) => {
         })
       }
       
-      setFormData({ name: '', description: '', color: '#3b82f6' })
+      // ✅ Reset
+      setFormData({
+        name: '',
+        description: '',
+        color: '#3b82f6',
+        budget: '',
+        budgetCurrency: 'IRR',
+        budgetPeriod: 'total'
+      })
+      
       if (onClose) onClose()
     } catch (error) {
       console.error('Error saving project:', error)
@@ -90,6 +129,7 @@ const ProjectForm = ({ onClose, editProject = null }) => {
   return (
     <Card className="p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* نام */}
         <Input
           label={`${t('projects.form.name')} *`}
           value={formData.name}
@@ -99,6 +139,7 @@ const ProjectForm = ({ onClose, editProject = null }) => {
           autoFocus
         />
         
+        {/* توضیحات */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('projects.form.description')}
@@ -112,6 +153,7 @@ const ProjectForm = ({ onClose, editProject = null }) => {
           />
         </div>
 
+        {/* رنگ */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             {t('projects.form.color')}
@@ -138,7 +180,39 @@ const ProjectForm = ({ onClose, editProject = null }) => {
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
+        {/* ✅ بودجه پروژه */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <FiDollarSign size={14} className="text-emerald-600" />
+            {isPersian ? 'بودجه پروژه (اختیاری)' : 'Project Budget (optional)'}
+          </h4>
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            {isPersian 
+              ? 'اگر برای این پروژه بودجه مشخصی داری، اینجا وارد کن. در صفحه مالی می‌تونی هزینه‌های پروژه رو پیگیری کنی.'
+              : 'If you have a specific budget for this project, enter it here.'}
+          </p>
+
+          <CurrencyInput
+            label={isPersian ? 'مبلغ بودجه' : 'Budget Amount'}
+            value={formData.budget}
+            onChange={(e) => handleChange('budget', e.target.value)}
+            currency={formData.budgetCurrency}
+            placeholder="0"
+          />
+
+          {formData.budget && parseFloat(formData.budget) > 0 && (
+            <FormSelect
+              label={isPersian ? 'دوره بودجه' : 'Budget Period'}
+              value={formData.budgetPeriod}
+              onChange={(e) => handleChange('budgetPeriod', e.target.value)}
+              options={budgetPeriodOptions}
+            />
+          )}
+        </div>
+
+        {/* دکمه‌ها */}
+        <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button
             type="submit"
             loading={loading}

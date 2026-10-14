@@ -46,6 +46,12 @@ const tasksSlice = createSlice({
         recurring: action.payload.recurring || null,
         recurringEndDate: action.payload.recurringEndDate || null,
         parentTaskId: null,
+        // ✅ فیلدهای مالی
+        financialCost: action.payload.financialCost 
+          ? parseFloat(action.payload.financialCost) 
+          : null,
+        financialCategory: action.payload.financialCategory || null,
+        financialTransactionId: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -71,7 +77,17 @@ const tasksSlice = createSlice({
         }
       }
     },
-    
+
+    // ✅ لینک تراکنش به تسک (برای جلوگیری از تکرار)
+    linkTransactionToTask: (state, action) => {
+      const { taskId, transactionId } = action.payload
+      const task = state.tasks.find(t => t.id === taskId)
+      if (task) {
+        task.financialTransactionId = transactionId
+        task.updatedAt = new Date().toISOString()
+      }
+    },
+
     // ✅ حذف تسک
     deleteTask: (state, action) => {
       state.tasks = state.tasks.filter(task => task.id !== action.payload)
@@ -159,100 +175,95 @@ const tasksSlice = createSlice({
       }
     },
 
-   // ✅ بررسی و ساخت تسک‌های تکرارشونده — نسخه اصلاح‌شده
-generateRecurringTasks: (state) => {
-  const now = new Date()
-  
-  // ✅ FIX: فرمت تاریخ محلی (بدون UTC، بدون اشتباه timezone)
-  const formatLocalDate = (date) => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }
-  
-  const todayStr = formatLocalDate(now)
-  const todayStart = new Date(now)
-  todayStart.setHours(0, 0, 0, 0)
-  
-  // ✅ فقط parent تسک‌های recurring
-  const recurringTasks = state.tasks.filter(t => 
-    t.recurring && 
-    !t.parentTaskId &&
-    t.dueDate
-  )
-
-  recurringTasks.forEach(parentTask => {
-    const originalDate = new Date(parentTask.dueDate)
-    originalDate.setHours(0, 0, 0, 0)
-    
-    // چک تاریخ پایان
-    if (parentTask.recurringEndDate) {
-      const endDate = new Date(parentTask.recurringEndDate)
-      endDate.setHours(0, 0, 0, 0)
-      if (todayStart > endDate) return
-    }
-
-    // محاسبه تاریخ بعدی
-    let nextDate = new Date(originalDate)
-    let iterations = 0
-    const maxIterations = 365
-    
-    while (nextDate < todayStart && iterations < maxIterations) {
-      iterations++
-      switch (parentTask.recurring) {
-        case 'daily':
-          nextDate.setDate(nextDate.getDate() + 1)
-          break
-        case 'weekly':
-          nextDate.setDate(nextDate.getDate() + 7)
-          break
-        case 'monthly':
-          nextDate.setMonth(nextDate.getMonth() + 1)
-          break
-        default:
-          return
+    // ✅ بررسی و ساخت تسک‌های تکرارشونده
+    generateRecurringTasks: (state) => {
+      const now = new Date()
+      
+      const formatLocalDate = (date) => {
+        const y = date.getFullYear()
+        const m = String(date.getMonth() + 1).padStart(2, '0')
+        const d = String(date.getDate()).padStart(2, '0')
+        return `${y}-${m}-${d}`
       }
-    }
+      
+      const todayStr = formatLocalDate(now)
+      const todayStart = new Date(now)
+      todayStart.setHours(0, 0, 0, 0)
+      
+      const recurringTasks = state.tasks.filter(t => 
+        t.recurring && 
+        !t.parentTaskId &&
+        t.dueDate
+      )
 
-    // ✅ FIX: مقایسه با فرمت محلی به جای toDateString()
-    const nextDateStr = formatLocalDate(nextDate)
-    
-    // اگه امروز نوبت این تسک نیست، رد شو
-    if (nextDateStr !== todayStr) return
+      recurringTasks.forEach(parentTask => {
+        const originalDate = new Date(parentTask.dueDate)
+        originalDate.setHours(0, 0, 0, 0)
+        
+        if (parentTask.recurringEndDate) {
+          const endDate = new Date(parentTask.recurringEndDate)
+          endDate.setHours(0, 0, 0, 0)
+          if (todayStart > endDate) return
+        }
 
-    // ✅ FIX: چک تکراری با مقایسه مستقیم رشته‌ی تاریخ
-    const alreadyExists = state.tasks.some(t => 
-      t.parentTaskId === parentTask.id && 
-      t.dueDate === todayStr
-    )
-    
-    if (alreadyExists) return
+        let nextDate = new Date(originalDate)
+        let iterations = 0
+        const maxIterations = 365
+        
+        while (nextDate < todayStart && iterations < maxIterations) {
+          iterations++
+          switch (parentTask.recurring) {
+            case 'daily':
+              nextDate.setDate(nextDate.getDate() + 1)
+              break
+            case 'weekly':
+              nextDate.setDate(nextDate.getDate() + 7)
+              break
+            case 'monthly':
+              nextDate.setMonth(nextDate.getMonth() + 1)
+              break
+            default:
+              return
+          }
+        }
 
-    // ✅ ساخت نسخه امروز
-    state.tasks.push({
-      ...parentTask,
-      id: uuidv4(),
-      parentTaskId: parentTask.id,
-      // ✅ FIX: پاک کردن recurring از فرزند تا خودش parent نشه
-      recurring: null,
-      recurringEndDate: null,
-      completed: false,
-      status: 'todo',
-      actualTime: 0,
-      dueDate: todayStr,  // ✅ FIX: تاریخ محلی درست (نه UTC)
-      subtasks: (parentTask.subtasks || []).map(st => ({
-        id: uuidv4(),
-        title: st.title,
-        completed: false,
-        createdAt: new Date().toISOString()
-      })),
-      notes: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    })
-  })
-},
+        const nextDateStr = formatLocalDate(nextDate)
+        
+        if (nextDateStr !== todayStr) return
+
+        const alreadyExists = state.tasks.some(t => 
+          t.parentTaskId === parentTask.id && 
+          t.dueDate === todayStr
+        )
+        
+        if (alreadyExists) return
+
+        state.tasks.push({
+          ...parentTask,
+          id: uuidv4(),
+          parentTaskId: parentTask.id,
+          recurring: null,
+          recurringEndDate: null,
+          completed: false,
+          status: 'todo',
+          actualTime: 0,
+          dueDate: todayStr,
+          // ✅ فیلدهای مالی هم کپی میشن
+          financialCost: parentTask.financialCost,
+          financialCategory: parentTask.financialCategory,
+          financialTransactionId: null,
+          subtasks: (parentTask.subtasks || []).map(st => ({
+            id: uuidv4(),
+            title: st.title,
+            completed: false,
+            createdAt: new Date().toISOString()
+          })),
+          notes: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+      })
+    },
 
     // ✅ افزودن تگ به تسک
     addTagToTask: (state, action) => {
@@ -306,7 +317,8 @@ export const {
   generateRecurringTasks,
   addTagToTask,
   removeTagFromTask,
-  removeAvailableTag
+  removeAvailableTag,
+  linkTransactionToTask  // ✅ جدید
 } = tasksSlice.actions
 
 export default tasksSlice.reducer

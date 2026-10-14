@@ -26,7 +26,10 @@ import ProjectProgressWidget from './widgets/ProjectProgressWidget'
 import ProductivityWidget from './widgets/ProductivityWidget'
 import ProductivityScoreWidget from './widgets/ProductivityScoreWidget'
 import NotesWidget from '../notes/NotesWidget'
-
+import BalanceWidget from '../finance/BalanceWidget'
+import MonthlyBudgetWidget from '../finance/MonthlyBudgetWidget'
+import KhumsWidget from '../finance/KhumsWidget'
+import RecentTransactionsWidget from '../finance/RecentTransactionsWidget'
 // ✅ خارج از کامپوننت — جلوگیری از بازتعریف
 const WIDGET_COMPONENTS = {
   productivityScore: ProductivityScoreWidget,
@@ -39,7 +42,11 @@ const WIDGET_COMPONENTS = {
   notes: NotesWidget,
   projectProgress: ProjectProgressWidget,
   productivity: ProductivityWidget,
-  tags: TagsWidget
+  tags: TagsWidget,
+    financeBalance: BalanceWidget,
+  monthlyBudget: MonthlyBudgetWidget,
+  khums: KhumsWidget,
+  recentTransactions: RecentTransactionsWidget
 }
 
 const Dashboard = () => {
