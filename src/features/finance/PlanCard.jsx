@@ -7,15 +7,15 @@ import {
   FiUser, FiTrendingUp, FiTrendingDown, FiAlertTriangle,
   FiClock, FiDollarSign
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
-import Button from '../../../components/ui/Button'
-import { payPlanDue, selectPlanDues, PLAN_TYPES } from '../financeSlice'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import { payPlanDue, selectPlanDues, PLAN_TYPES } from './financeSlice'
 import {
   formatNumber,
   formatCompact,
   CURRENCY_META
 } from './currencyHelpers'
-import { formatDateByLang } from '../../../utils/formatters'
+import { formatDateByLang } from '../../utils/formatters'
 
 const PlanCard = memo(({ plan, onEdit }) => {
   const { i18n } = useTranslation()

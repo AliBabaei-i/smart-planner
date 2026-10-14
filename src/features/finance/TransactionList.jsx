@@ -4,10 +4,10 @@ import {
   FiSearch, FiFilter, FiX, FiTrendingUp,
   FiTrendingDown, FiRepeat, FiInbox
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
-import Input from '../../../components/ui/Input'
+import Card from '../../components/ui/Card'
+import Input from '../../components/ui/Input'
 import TransactionItem from './TransactionItem'
-import { TRANSACTION_TYPES } from '../financeSlice'
+import { TRANSACTION_TYPES } from './financeSlice'
 
 const TransactionList = memo(({
   transactions = [],

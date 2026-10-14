@@ -1,10 +1,8 @@
 // ═══════════════════════════════════════════════
 // ✅ توابع کمکی مشترک برای کار با تاریخ
+// همه توابع از تاریخ محلی استفاده می‌کنن (نه UTC)
 // ═══════════════════════════════════════════════
 
-/**
- * تبدیل Date به رشته 'YYYY-MM-DD' (محلی — بدون UTC)
- */
 export const getLocalDateStr = (date = new Date()) => {
   if (!date) return ''
   const d = date instanceof Date ? date : new Date(date)
@@ -15,14 +13,8 @@ export const getLocalDateStr = (date = new Date()) => {
   return `${y}-${m}-${day}`
 }
 
-/**
- * ✅ تاریخ امروز به صورت 'YYYY-MM-DD'
- */
 export const getTodayStr = () => getLocalDateStr(new Date())
 
-/**
- * تبدیل رشته 'YYYY-MM-DD' به Date محلی
- */
 export const fromLocalDateStr = (str) => {
   if (!str) return null
   const [y, m, d] = str.split('-').map(Number)
@@ -30,22 +22,13 @@ export const fromLocalDateStr = (str) => {
   return new Date(y, m - 1, d)
 }
 
-/**
- * چک کن آیا دو تاریخ یه روز هستن
- */
 export const isSameDay = (d1, d2) => {
   if (!d1 || !d2) return false
   return new Date(d1).toDateString() === new Date(d2).toDateString()
 }
 
-/**
- * چک کن آیا تاریخ امروزه
- */
 export const isToday = (date) => isSameDay(date, new Date())
 
-/**
- * ۷ روز اخیر
- */
 export const getLast7Days = (fromDate = new Date()) => {
   const days = []
   for (let i = 6; i >= 0; i--) {
@@ -57,31 +40,19 @@ export const getLast7Days = (fromDate = new Date()) => {
   return days
 }
 
-/**
- * تبدیل ساعت به رشته 'HH:۰۰'
- */
 export const formatHour = (hour) => {
   if (hour === null || hour === undefined) return '--:--'
-  return `${String(hour).padStart(2, '0')}:۰۰`
+  return `${String(hour).padStart(2, '0')}:00`
 }
 
-/**
- * افزودن روز به تاریخ
- */
 export const addDays = (date, days) => {
   const result = new Date(date)
   result.setDate(result.getDate() + days)
   return result
 }
 
-/**
- * افزودن هفته به تاریخ
- */
 export const addWeeks = (date, weeks) => addDays(date, weeks * 7)
 
-/**
- * ساخت آرایه ساعات
- */
 export const getHourOptions = (from = 0, to = 23) => {
   const hours = []
   for (let h = from; h <= to; h++) {
@@ -90,9 +61,6 @@ export const getHourOptions = (from = 0, to = 23) => {
   return hours
 }
 
-/**
- * ✅ پارس امن تاریخ (بدون مشکل UTC)
- */
 export const safeParseDate = (dateInput) => {
   if (!dateInput) return null
   if (dateInput instanceof Date) return dateInput
@@ -108,9 +76,6 @@ export const safeParseDate = (dateInput) => {
   return new Date(dateInput)
 }
 
-/**
- * ✅ نمایش زمان نسبی (فارسی)
- */
 export const formatRelativeTime = (dateInput) => {
   try {
     if (!dateInput) return '---'
@@ -138,9 +103,6 @@ export const formatRelativeTime = (dateInput) => {
   }
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Export پیش‌فرض
-// ═══════════════════════════════════════════════
 export default {
   getLocalDateStr,
   getTodayStr,

@@ -4,7 +4,7 @@ import {
   FiCreditCard, FiDollarSign, FiBriefcase, FiHome,
   FiTrendingUp, FiPackage, FiZap, FiEdit2
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
+import Card from '../../components/ui/Card'
 import { formatNumber, formatCompact, CURRENCY_META } from './currencyHelpers'
 
 const ACCOUNT_ICONS = {

@@ -9,11 +9,11 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend
 } from 'recharts'
-import Card from '../../../components/ui/Card'
+import Card from '../../components/ui/Card'
 import {
   formatCompact, formatNumber, CURRENCY_META
 } from './currencyHelpers'
-import { selectKhumsCalculation } from '../financeSlice'
+import { selectKhumsCalculation } from './financeSlice'
 
 const FinanceDashboard = memo(({ onNavigate }) => {
   const { i18n } = useTranslation()

@@ -3,18 +3,18 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import { FiSave, FiX, FiTarget, FiFolder } from 'react-icons/fi'
-import Modal from '../../../components/ui/Modal'
-import Button from '../../../components/ui/Button'
-import DatePicker from '../../../components/ui/DatePicker'
-import FormSelect from '../../../components/ui/FormSelect'
+import Modal from '../../components/ui/Modal'
+import Button from '../../components/ui/Button'
+import DatePicker from '../../components/ui/DatePicker'
+import FormSelect from '../../components/ui/FormSelect'
 import CurrencyInput from './CurrencyInput'
 import {
   addBudget,
   updateBudget,
   deleteBudget,
   BUDGET_PERIODS
-} from '../financeSlice'
-import { getTodayStr } from '../../../utils/dateHelpers'
+} from './financeSlice'
+import { getTodayStr } from '../../utils/dateHelpers'
 
 // ✅ helper: تاریخ پایان بر اساس دوره
 const getEndDate = (startDate, period) => {

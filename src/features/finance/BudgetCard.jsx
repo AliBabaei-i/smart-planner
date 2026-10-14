@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import {
   FiTarget, FiAlertTriangle, FiCheckCircle, FiEdit2, FiCalendar
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
+import Card from '../../components/ui/Card'
 import { useSelector } from 'react-redux'
-import { selectBudgetProgress } from '../financeSlice'
+import { selectBudgetProgress } from './financeSlice'
 import { formatNumber, formatCompact } from './currencyHelpers'
 
 const BudgetCard = memo(({ budget, onEdit }) => {

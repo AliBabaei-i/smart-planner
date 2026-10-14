@@ -7,11 +7,11 @@ import {
   FiSettings, FiDollarSign, FiPackage, FiSave,
   FiX, FiRefreshCw
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
-import Button from '../../../components/ui/Button'
-import DatePicker from '../../../components/ui/DatePicker'
-import Modal from '../../../components/ui/Modal'
-import FormTextarea from '../../../components/ui/FormTextarea'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import DatePicker from '../../components/ui/DatePicker'
+import Modal from '../../components/ui/Modal'
+import FormTextarea from '../../components/ui/FormTextarea'
 import CurrencyInput from './CurrencyInput'
 import {
   updateIslamicSettings,
@@ -19,7 +19,7 @@ import {
   addTransaction,
   selectKhumsCalculation,
   selectZakatCalculation
-} from '../financeSlice'
+} from './financeSlice'
 import {
   calculateZakat,
   ZAKAT_NISAB

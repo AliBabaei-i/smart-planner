@@ -6,12 +6,12 @@ import {
   FiDownload, FiUpload, FiFileText, FiAlertTriangle,
   FiCheckCircle, FiTrash2, FiInfo, FiX
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
-import Button from '../../../components/ui/Button'
-import ConfirmDialog from '../../../components/ui/ConfirmDialog'
-import { importFinanceData, resetFinance } from '../financeSlice'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { importFinanceData, resetFinance } from './financeSlice'
 import { formatNumber } from './currencyHelpers'
-import { getTodayStr } from '../../../utils/dateHelpers'
+import { getTodayStr } from '../../utils/dateHelpers'
 
 const FinanceImportExport = memo(() => {
   const { i18n } = useTranslation()

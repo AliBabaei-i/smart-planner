@@ -6,14 +6,14 @@ import {
   FiPlus, FiEdit2, FiTrash2, FiX, FiSave,
   FiTrendingUp, FiTrendingDown
 } from 'react-icons/fi'
-import Card from '../../../components/ui/Card'
-import Button from '../../../components/ui/Button'
-import Modal from '../../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import Modal from '../../components/ui/Modal'
 import {
   addCategory,
   updateCategory,
   deleteCategory
-} from '../financeSlice'
+} from './financeSlice'
 
 const COLOR_OPTIONS = [
   '#3b82f6', '#10b981', '#ef4444', '#f59e0b',

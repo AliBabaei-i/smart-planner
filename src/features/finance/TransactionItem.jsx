@@ -5,7 +5,7 @@ import {
   FiEdit2, FiClock, FiCalendar, FiTag
 } from 'react-icons/fi'
 import { formatNumber, CURRENCY_META } from './currencyHelpers'
-import { formatDateByLang } from '../../../utils/formatters'
+import { formatDateByLang } from '../../utils/formatters'
 
 const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompact = false }) => {
   const { i18n } = useTranslation()

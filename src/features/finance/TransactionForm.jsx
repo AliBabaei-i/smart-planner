@@ -6,11 +6,11 @@ import {
   FiSave, FiX, FiTrendingUp, FiTrendingDown,
   FiRepeat, FiAlertTriangle
 } from 'react-icons/fi'
-import Modal from '../../../components/ui/Modal'
-import Button from '../../../components/ui/Button'
-import FormSelect from '../../../components/ui/FormSelect'
-import FormTextarea from '../../../components/ui/FormTextarea'
-import DatePicker from '../../../components/ui/DatePicker'
+import Modal from '../../components/ui/Modal'
+import Button from '../../components/ui/Button'
+import FormSelect from '../../components/ui/FormSelect'
+import FormTextarea from '../../components/ui/FormTextarea'
+import DatePicker from '../../components/ui/DatePicker'
 import CurrencyInput from './CurrencyInput'
 import {
   addTransaction,
@@ -18,8 +18,8 @@ import {
   deleteTransaction,
   TRANSACTION_TYPES,
   CURRENCIES
-} from '../financeSlice'
-import { getTodayStr } from '../../../utils/dateHelpers'
+} from './financeSlice'
+import { getTodayStr } from '../../utils/dateHelpers'
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
   value: `${String(i).padStart(2, '0')}:00`,

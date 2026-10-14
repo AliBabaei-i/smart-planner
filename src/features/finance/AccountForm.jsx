@@ -7,17 +7,17 @@ import {
   FiCreditCard, FiBriefcase, FiHome, FiTrendingUp,
   FiPackage, FiZap
 } from 'react-icons/fi'
-import Modal from '../../../components/ui/Modal'
-import Button from '../../../components/ui/Button'
-import Input from '../../../components/ui/Input'
-import FormSelect from '../../../components/ui/FormSelect'
+import Modal from '../../components/ui/Modal'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import FormSelect from '../../components/ui/FormSelect'
 import {
   addAccount,
   updateAccount,
   deleteAccount,
   ACCOUNT_TYPES,
   CURRENCIES
-} from '../financeSlice'
+} from './financeSlice'
 import { formatNumber } from './currencyHelpers'
 
 // ✅ رنگ‌های پیشنهادی برای حساب

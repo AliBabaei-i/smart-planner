@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { FiPercent, FiArrowRight, FiAlertCircle } from 'react-icons/fi'
-import { selectKhumsCalculation } from '../financeSlice'
+import { selectKhumsCalculation } from './financeSlice'
 import { formatCompact } from './currencyHelpers'
 
 const KhumsWidget = memo(() => {

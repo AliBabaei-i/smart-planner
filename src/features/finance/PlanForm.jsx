@@ -5,15 +5,15 @@ import { toast } from 'react-toastify'
 import {
   FiSave, FiX, FiAlertTriangle, FiInfo, FiRefreshCw
 } from 'react-icons/fi'
-import Modal from '../../../components/ui/Modal'
-import Button from '../../../components/ui/Button'
-import Input from '../../../components/ui/Input'
-import FormSelect from '../../../components/ui/FormSelect'
-import DatePicker from '../../../components/ui/DatePicker'
-import FormTextarea from '../../../components/ui/FormTextarea'
+import Modal from '../../components/ui/Modal'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import FormSelect from '../../components/ui/FormSelect'
+import DatePicker from '../../components/ui/DatePicker'
+import FormTextarea from '../../components/ui/FormTextarea'
 import CurrencyInput from './CurrencyInput'
-import { addPlan, updatePlan, deletePlan, PLAN_TYPES } from '../financeSlice'
-import { getTodayStr } from '../../../utils/dateHelpers'
+import { addPlan, updatePlan, deletePlan, PLAN_TYPES } from './financeSlice'
+import { getTodayStr } from '../../utils/dateHelpers'
 import { formatNumber } from './currencyHelpers'
 
 const PERIODICITY_OPTIONS = [
