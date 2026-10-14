@@ -440,7 +440,7 @@ export const getWeekRange = (date = new Date()) => {
     return { start: new Date(), end: new Date(), startFormatted: '', endFormatted: '' }
   }
 }
-
+export const getTodayStr = () => getLocalDateStr(new Date())
 // Export default برای راحتی استفاده
 export default {
   toPersianDigits,

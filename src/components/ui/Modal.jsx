@@ -32,7 +32,7 @@ const Modal = memo(({ isOpen, onClose, title, children, size = 'default' }) => {
 
   return (
     <div 
-      className="p-4 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
       onClick={onClose}
     >
       <div 
