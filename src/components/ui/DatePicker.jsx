@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  FiCalendar, FiChevronLeft, FiChevronRight, FiX, FiCheck
+  FiCalendar, FiChevronLeft, FiChevronRight, FiX
 } from 'react-icons/fi'
 import { toJalaali, toGregorian } from 'jalaali-js'
 
@@ -25,6 +25,12 @@ const fromLocalStr = (str) => {
   if (!str) return null
   const [y, m, d] = str.split('-').map(Number)
   return new Date(y, m - 1, d)
+}
+
+// ✅ چک سال کبیسه شمسی
+const isLeapJYear = (jy) => {
+  const a = jy % 33
+  return [1, 5, 9, 13, 17, 22, 26, 30].includes(a)
 }
 
 const DatePicker = memo(({
@@ -53,7 +59,7 @@ const DatePicker = memo(({
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth() + 1)
 
-  // ✅ وقتی مقدار عوض می‌شه، view رو sync کن
+  // ✅ sync view با مقدار انتخاب‌شده
   useEffect(() => {
     if (selectedDate) {
       setViewYear(selectedDate.getFullYear())
@@ -97,7 +103,23 @@ const DatePicker = memo(({
     if (onChange) {
       onChange({ target: { value: '', name: 'dueDate' } })
     }
+    setIsOpen(false)
   }, [onChange])
+
+  // ✅ Toggle
+  const handleToggle = useCallback(() => {
+    if (disabled) return
+    setIsOpen(prev => !prev)
+  }, [disabled])
+
+  // ✅ کیبورد روی trigger
+  const handleTriggerKeyDown = useCallback((e) => {
+    if (disabled) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setIsOpen(prev => !prev)
+    }
+  }, [disabled])
 
   // ✅ ناوبری ماه
   const goToPrevMonth = useCallback(() => {
@@ -141,16 +163,13 @@ const DatePicker = memo(({
   const grid = useMemo(() => {
     if (isPersian) {
       const j = toJalaali(viewYear, viewMonth, 1)
-      // اول ماه شمسی
       const firstG = toGregorian(j.jy, j.jm, 1)
       const firstDate = new Date(firstG.gy, firstG.gm - 1, firstG.gd)
-      // طول ماه شمسی
       const daysInJMonth = j.jm <= 6 ? 31 : j.jm <= 11 ? 30 : (isLeapJYear(j.jy) ? 30 : 29)
-      
-      // روز اول هفته (شنبه=0)
-      const jsDay = firstDate.getDay() // 0=Sunday
+
+      const jsDay = firstDate.getDay()
       const firstDayIndex = (jsDay + 1) % 7
-      
+
       const cells = []
       for (let i = 0; i < firstDayIndex; i++) cells.push(null)
       for (let day = 1; day <= daysInJMonth; day++) {
@@ -161,15 +180,14 @@ const DatePicker = memo(({
           dateStr: `${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`
         })
       }
-      // تکمیل ردیف آخر
       while (cells.length % 7 !== 0) cells.push(null)
       return cells
     } else {
       const firstDate = new Date(viewYear, viewMonth - 1, 1)
       const daysInMonth = new Date(viewYear, viewMonth, 0).getDate()
       const jsDay = firstDate.getDay()
-      const firstDayIndex = jsDay // میلادی: یکشنبه=0
-      
+      const firstDayIndex = jsDay
+
       const cells = []
       for (let i = 0; i < firstDayIndex; i++) cells.push(null)
       for (let day = 1; day <= daysInMonth; day++) {
@@ -204,7 +222,6 @@ const DatePicker = memo(({
   }, [selectedDate, isPersian, placeholder, t])
 
   const todayStr = toLocalStr(new Date())
-
   const weekdays = isPersian ? PERSIAN_WEEKDAYS : ENGLISH_WEEKDAYS
 
   return (
@@ -218,39 +235,49 @@ const DatePicker = memo(({
         </label>
       )}
 
-      <button
-        type="button"
-        id={id}
-        disabled={disabled}
-        onClick={() => !disabled && setIsOpen(prev => !prev)}
-        className={`
-          w-full px-3 py-2 border rounded-lg shadow-sm
-          bg-white dark:bg-gray-700
-          text-gray-900 dark:text-white
-          text-start flex items-center justify-between gap-2
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-          transition-colors min-h-[42px] text-sm
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600'}
-          ${isOpen ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-300 dark:border-gray-600'}
-        `}
-      >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <FiCalendar size={14} className={`flex-shrink-0 ${selectedDate ? 'text-blue-500' : 'text-gray-400'}`} />
-          <span className={`truncate ${!selectedDate ? 'text-gray-400 dark:text-gray-500' : ''}`}>
+      {/* ✅ FIX: wrapper relative برای trigger + clear */}
+      <div className="relative">
+        {/* trigger — div با role=button، نه button */}
+        <div
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          id={id}
+          aria-disabled={disabled}
+          onClick={handleToggle}
+          onKeyDown={handleTriggerKeyDown}
+          className={`
+            w-full px-3 py-2 pe-9 border rounded-lg shadow-sm
+            bg-white dark:bg-gray-700
+            text-gray-900 dark:text-white
+            text-start flex items-center gap-2
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            transition-colors min-h-[42px] text-sm
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600'}
+            ${isOpen ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-300 dark:border-gray-600'}
+          `}
+        >
+          <FiCalendar
+            size={14}
+            className={`flex-shrink-0 ${selectedDate ? 'text-blue-500' : 'text-gray-400'}`}
+          />
+          <span className={`truncate flex-1 ${!selectedDate ? 'text-gray-400 dark:text-gray-500' : ''}`}>
             {displayLabel}
           </span>
         </div>
+
+        {/* clear button — sibling مستقل، نه child */}
         {selectedDate && !disabled && (
           <button
             type="button"
             onClick={handleClear}
-            className="text-gray-400 hover:text-red-500 flex-shrink-0 p-0.5"
+            className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1 rounded transition-colors z-10 bg-white dark:bg-gray-700"
             title={t('actions.delete') || 'حذف'}
+            tabIndex={-1}
           >
             <FiX size={14} />
           </button>
         )}
-      </button>
+      </div>
 
       {isOpen && (
         <div className="absolute z-50 top-full mt-1 start-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 w-[280px] animate-fade-in">
@@ -288,7 +315,7 @@ const DatePicker = memo(({
           <div className="grid grid-cols-7 gap-1">
             {grid.map((cell, idx) => {
               if (!cell) return <div key={`e-${idx}`} className="aspect-square" />
-              
+
               const isSelected = value === cell.dateStr
               const isToday = cell.dateStr === todayStr
               const isDisabled = (min && cell.dateStr < min) || (max && cell.dateStr > max)
@@ -343,13 +370,6 @@ const DatePicker = memo(({
     </div>
   )
 })
-
-// ✅ چک سال کبیسه شمسی
-function isLeapJYear(jy) {
-  // الگوریتم استاندارد کبیسه شمسی
-  const a = jy % 33
-  return [1, 5, 9, 13, 17, 22, 26, 30].includes(a)
-}
 
 DatePicker.displayName = 'DatePicker'
 
