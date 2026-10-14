@@ -29,7 +29,7 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
           color: '#ef4444',
           bgColor: 'bg-red-100 dark:bg-red-900/30',
           textColor: 'text-red-600 dark:text-red-400',
-          sign: 'âˆ’'
+          sign: '−'
         }
       case 'transfer':
         return {
@@ -37,7 +37,7 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
           color: '#3b82f6',
           bgColor: 'bg-blue-100 dark:bg-blue-900/30',
           textColor: 'text-blue-600 dark:text-blue-400',
-          sign: 'â†”'
+          sign: '↔'
         }
       default:
         return {
@@ -52,15 +52,15 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
 
   const currencyMeta = CURRENCY_META[currency] || CURRENCY_META.IRR
 
-  // âœ… Ø¹Ù†ÙˆØ§Ù†
+  // ✅ عنوان
   const title = useMemo(() => {
     if (description) return description
     if (type === 'transfer') {
       return isPersian 
-        ? `Ø§Ù†ØªÙ‚Ø§Ù„ Ø§Ø² ${account?.name || 'ØŸ'} Ø¨Ù‡ ${toAccount?.name || 'ØŸ'}`
+        ? `انتقال از ${account?.name || '؟'} به ${toAccount?.name || '؟'}`
         : `Transfer from ${account?.name || '?'} to ${toAccount?.name || '?'}`
     }
-    return category || (isPersian ? 'Ø¨Ø¯ÙˆÙ† Ø¹Ù†ÙˆØ§Ù†' : 'Untitled')
+    return category || (isPersian ? 'بدون عنوان' : 'Untitled')
   }, [description, type, category, account, toAccount, isPersian])
 
   const Icon = typeConfig.Icon
@@ -98,12 +98,12 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
       }`}
       onClick={() => onEdit?.(transaction)}
     >
-      {/* Ø¢ÛŒÚ©ÙˆÙ† */}
+      {/* آیکون */}
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${typeConfig.bgColor}`}>
         <Icon size={18} className={typeConfig.textColor} />
       </div>
 
-      {/* Ø§Ø·Ù„Ø§Ø¹Ø§Øª */}
+      {/* اطلاعات */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -111,7 +111,7 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
               {title}
             </div>
 
-            {/* Ù…ØªØ§Ø¯ÛŒØªØ§ */}
+            {/* متادیتا */}
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
               {account && (
                 <span className="flex items-center gap-1">
@@ -144,7 +144,7 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
             </div>
           </div>
 
-          {/* Ù…Ø¨Ù„Øº */}
+          {/* مبلغ */}
           <div className="flex items-start gap-2 flex-shrink-0">
             <div className={`font-bold ${typeConfig.textColor}`}>
               {typeConfig.sign}{formatNumber(amount, isPersian, currencyMeta.decimals)}
@@ -157,7 +157,7 @@ const TransactionItem = memo(({ transaction, account, toAccount, onEdit, isCompa
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(transaction) }}
                 className="text-gray-400 hover:text-emerald-500 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                title={isPersian ? 'ÙˆÛŒØ±Ø§ÛŒØ´' : 'Edit'}
+                title={isPersian ? 'ویرایش' : 'Edit'}
               >
                 <FiEdit2 size={14} />
               </button>
