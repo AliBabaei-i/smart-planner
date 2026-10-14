@@ -5,13 +5,15 @@ import {
 } from 'react-icons/fi'
 import { toJalaali, toGregorian } from 'jalaali-js'
 
-// ✅ ماه‌های شمسی و میلادی
+// ═══════════════════════════════════════════════
+// ✅ Constants
+// ═══════════════════════════════════════════════
 const PERSIAN_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند']
 const PERSIAN_WEEKDAYS = ['ش','ی','د','س','چ','پ','ج']
 const ENGLISH_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const ENGLISH_WEEKDAYS = ['S','M','T','W','T','F','S']
 
-// ✅ تبدیل Date به رشته YYYY-MM-DD (محلی)
+// ✅ تبدیل Date به رشته YYYY-MM-DD (محلی — بدون UTC)
 const toLocalStr = (date) => {
   if (!date) return ''
   const y = date.getFullYear()
@@ -20,10 +22,11 @@ const toLocalStr = (date) => {
   return `${y}-${m}-${d}`
 }
 
-// ✅ تبدیل رشته YYYY-MM-DD به Date
+// ✅ تبدیل رشته YYYY-MM-DD به Date محلی
 const fromLocalStr = (str) => {
   if (!str) return null
   const [y, m, d] = str.split('-').map(Number)
+  if (!y || !m || !d) return null
   return new Date(y, m - 1, d)
 }
 
@@ -33,6 +36,9 @@ const isLeapJYear = (jy) => {
   return [1, 5, 9, 13, 17, 22, 26, 30].includes(a)
 }
 
+// ═══════════════════════════════════════════════
+// ✅ کامپوننت DatePicker
+// ═══════════════════════════════════════════════
 const DatePicker = memo(({
   value = '',
   onChange,
@@ -59,7 +65,7 @@ const DatePicker = memo(({
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth() + 1)
 
-  // ✅ sync view با مقدار انتخاب‌شده
+  // ✅ Sync view با مقدار انتخاب‌شده
   useEffect(() => {
     if (selectedDate) {
       setViewYear(selectedDate.getFullYear())
@@ -79,7 +85,7 @@ const DatePicker = memo(({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  // ✅ Escape
+  // ✅ بستن با Escape
   useEffect(() => {
     if (!isOpen) return
     const handleKey = (e) => {
@@ -99,7 +105,7 @@ const DatePicker = memo(({
 
   // ✅ پاک کردن
   const handleClear = useCallback((e) => {
-    e?.stopPropagation()
+    if (e) e.stopPropagation()
     if (onChange) {
       onChange({ target: { value: '', name: 'dueDate' } })
     }
@@ -159,6 +165,12 @@ const DatePicker = memo(({
     handleSelect(today)
   }, [handleSelect])
 
+  const goToTomorrow = useCallback(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    handleSelect(tomorrow)
+  }, [handleSelect])
+
   // ✅ گرید روزهای ماه
   const grid = useMemo(() => {
     if (isPersian) {
@@ -177,7 +189,7 @@ const DatePicker = memo(({
         cells.push({
           day,
           date: new Date(g.gy, g.gm - 1, g.gd),
-          dateStr: `${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`
+          dateStr: `${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`
         })
       }
       while (cells.length % 7 !== 0) cells.push(null)
@@ -194,7 +206,7 @@ const DatePicker = memo(({
         cells.push({
           day,
           date: new Date(viewYear, viewMonth - 1, day),
-          dateStr: `${viewYear}-${String(viewMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+          dateStr: `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         })
       }
       while (cells.length % 7 !== 0) cells.push(null)
@@ -216,7 +228,7 @@ const DatePicker = memo(({
     if (!selectedDate) return placeholder || t('tasks.form.selectDate') || 'انتخاب تاریخ'
     if (isPersian) {
       const j = toJalaali(selectedDate.getFullYear(), selectedDate.getMonth() + 1, selectedDate.getDate())
-      return `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`
+      return `${j.jy}/${String(j.jm).padStart(2, '0')}/${String(j.jd).padStart(2, '0')}`
     }
     return toLocalStr(selectedDate)
   }, [selectedDate, isPersian, placeholder, t])
@@ -235,14 +247,16 @@ const DatePicker = memo(({
         </label>
       )}
 
-      {/* ✅ FIX: wrapper relative برای trigger + clear */}
+      {/* ✅ Wrapper relative برای trigger + clear */}
       <div className="relative">
-        {/* trigger — div با role=button، نه button */}
+        {/* ✅ trigger — div با role=button (نه button) */}
         <div
           role="button"
           tabIndex={disabled ? -1 : 0}
           id={id}
           aria-disabled={disabled}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
           onClick={handleToggle}
           onKeyDown={handleTriggerKeyDown}
           className={`
@@ -265,7 +279,7 @@ const DatePicker = memo(({
           </span>
         </div>
 
-        {/* clear button — sibling مستقل، نه child */}
+        {/* ✅ دکمه clear — sibling مستقل، نه child */}
         {selectedDate && !disabled && (
           <button
             type="button"
@@ -279,14 +293,17 @@ const DatePicker = memo(({
         )}
       </div>
 
+      {/* ✅ Dropdown تقویم */}
       {isOpen && (
         <div className="absolute z-50 top-full mt-1 start-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 w-[280px] animate-fade-in">
+
           {/* هدر ناوبری */}
           <div className="flex items-center justify-between mb-3">
             <button
               type="button"
               onClick={goToPrevMonth}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
+              aria-label="previous month"
             >
               {isPersian ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
             </button>
@@ -296,7 +313,8 @@ const DatePicker = memo(({
             <button
               type="button"
               onClick={goToNextMonth}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
+              aria-label="next month"
             >
               {isPersian ? <FiChevronLeft size={18} /> : <FiChevronRight size={18} />}
             </button>
@@ -305,7 +323,10 @@ const DatePicker = memo(({
           {/* روزهای هفته */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {weekdays.map((d, i) => (
-              <div key={i} className="text-center text-xs font-semibold text-gray-400 dark:text-gray-500 py-1">
+              <div
+                key={i}
+                className="text-center text-xs font-semibold text-gray-400 dark:text-gray-500 py-1"
+              >
                 {d}
               </div>
             ))}
@@ -314,7 +335,9 @@ const DatePicker = memo(({
           {/* گرید روزها */}
           <div className="grid grid-cols-7 gap-1">
             {grid.map((cell, idx) => {
-              if (!cell) return <div key={`e-${idx}`} className="aspect-square" />
+              if (!cell) {
+                return <div key={`e-${idx}`} className="aspect-square" />
+              }
 
               const isSelected = value === cell.dateStr
               const isToday = cell.dateStr === todayStr
@@ -333,7 +356,7 @@ const DatePicker = memo(({
                     ${isSelected
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : isToday
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }
                   `}
@@ -355,14 +378,10 @@ const DatePicker = memo(({
             </button>
             <button
               type="button"
-              onClick={() => {
-                const tomorrow = new Date()
-                tomorrow.setDate(tomorrow.getDate() + 1)
-                handleSelect(tomorrow)
-              }}
+              onClick={goToTomorrow}
               className="flex-1 px-2 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              فردا
+              {isPersian ? 'فردا' : 'Tomorrow'}
             </button>
           </div>
         </div>
