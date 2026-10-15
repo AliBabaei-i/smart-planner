@@ -5,15 +5,15 @@ import { FiMenu, FiSearch, FiFolder, FiCheckSquare, FiTrendingUp, FiPlus } from 
 import Notifications from '../../features/notifications/Notifications'
 import ThemeToggle from '../../features/theme/ThemeToggle'
 import LanguageSwitcher from '../common/LanguageSwitcher'
-
+import SyncIndicator from '../sync/SyncIndicator'
 const Header = ({ onOpenSearch, onOpenQuickAdd, onToggleSidebar }) => {
   const { t } = useTranslation()
   const { projects = [] } = useSelector(state => state.projects)
   const { tasks = [] } = useSelector(state => state.tasks)
-  
+
   const completedTasks = tasks.filter(task => task.completed).length
-  const productivity = tasks.length > 0 
-    ? Math.round((completedTasks / tasks.length) * 100) 
+  const productivity = tasks.length > 0
+    ? Math.round((completedTasks / tasks.length) * 100)
     : 0
 
   return (
@@ -93,6 +93,7 @@ const Header = ({ onOpenSearch, onOpenQuickAdd, onToggleSidebar }) => {
             </button>
 
             <LanguageSwitcher />
+            <SyncIndicator />
             <ThemeToggle />
             <Notifications />
           </div>
