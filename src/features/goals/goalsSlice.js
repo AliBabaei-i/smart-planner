@@ -76,6 +76,7 @@ const goalsSlice = createSlice({
       const goal = state.goals.find(g => g.id === action.payload)
       if (goal) {
         goal.archived = !goal.archived
+        goal.updatedAt = new Date().toISOString()
         saveToStorage(state)
       }
     },
@@ -84,6 +85,7 @@ const goalsSlice = createSlice({
       const goal = state.goals.find(g => g.id === id)
       if (goal) {
         goal.status = status
+        goal.updatedAt = new Date().toISOString()
         saveToStorage(state)
       }
     },
@@ -98,6 +100,7 @@ const goalsSlice = createSlice({
           completed: false,
           createdAt: new Date().toISOString()
         })
+        goal.updatedAt = new Date().toISOString()
         saveToStorage(state)
       }
     },
@@ -108,6 +111,7 @@ const goalsSlice = createSlice({
         const m = goal.milestones.find(m => m.id === milestoneId)
         if (m) {
           m.completed = !m.completed
+          goal.updatedAt = new Date().toISOString()
           saveToStorage(state)
         }
       }
@@ -117,6 +121,7 @@ const goalsSlice = createSlice({
       const goal = state.goals.find(g => g.id === goalId)
       if (goal && goal.milestones) {
         goal.milestones = goal.milestones.filter(m => m.id !== milestoneId)
+        goal.updatedAt = new Date().toISOString()
         saveToStorage(state)
       }
     },
@@ -127,6 +132,7 @@ const goalsSlice = createSlice({
         const m = goal.milestones.find(m => m.id === milestoneId)
         if (m) {
           m.title = title
+          goal.updatedAt = new Date().toISOString()
           saveToStorage(state)
         }
       }
@@ -135,6 +141,38 @@ const goalsSlice = createSlice({
       state.goals = []
       saveToStorage(state)
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    builder.addCase('sync/mergeGoals', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        if (remote.deletedAt || remote.deleted_at) {
+          state.goals = state.goals.filter(g => g.id !== remote.id)
+          continue
+        }
+
+        const index = state.goals.findIndex(g => g.id === remote.id)
+
+        if (index === -1) {
+          state.goals.unshift(remote)
+        } else {
+          const local = state.goals[index]
+          const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.goals[index] = { ...local, ...remote }
+          }
+        }
+      }
+
+      saveToStorage(state)
+    })
   }
 })
 

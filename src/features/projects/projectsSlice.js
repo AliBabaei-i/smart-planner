@@ -19,7 +19,6 @@ const projectsSlice = createSlice({
         description: action.payload.description || '',
         color: action.payload.color || '#3b82f6',
         icon: action.payload.icon || 'folder',
-        // ✅ فیلدهای مالی
         budget: action.payload.budget 
           ? parseFloat(action.payload.budget) 
           : null,
@@ -57,6 +56,40 @@ const projectsSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    // ✅ Merge projects از سرور
+    builder.addCase('sync/mergeProjects', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        // ✅ اگه deleted_at داره → حذف کن
+        if (remote.deletedAt || remote.deleted_at) {
+          state.projects = state.projects.filter(p => p.id !== remote.id)
+          continue
+        }
+
+        const index = state.projects.findIndex(p => p.id === remote.id)
+
+        if (index === -1) {
+          // ✅ پروژه جدید از سرور
+          state.projects.push(remote)
+        } else {
+          // ✅ پروژه موجود → Last-Write-Wins
+          const local = state.projects[index]
+          const localTime = new Date(local.updatedAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.projects[index] = { ...local, ...remote }
+          }
+        }
+      }
+    })
   }
 })
 

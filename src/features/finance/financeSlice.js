@@ -97,12 +97,10 @@ const getInitialState = () => {
             khumsPaid: 0,
             sahmImam: 0,
             sahmSadat: 0,
-            // زکات
             goldNisabGrams: 87.48,
             silverNisabGrams: 612.36,
             goldPricePerGram: 5000000,
             silverPricePerGram: 80000,
-            // نمایش
             showKhumsWidget: true,
             showZakatWidget: true,
             warnOnInterest: true
@@ -132,7 +130,6 @@ const getInitialState = () => {
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
             const parsed = JSON.parse(saved)
-            // merge با default (برای فیلدهای جدید)
             return {
                 ...defaultState,
                 ...parsed,
@@ -156,27 +153,16 @@ const getInitialState = () => {
 // ✅ Helper: محاسبه سررسیدهای Plan (derived)
 // ═══════════════════════════════════════════════
 
-/**
- * ✅ سررسیدهای یه Plan رو محاسبه می‌کنه (نه ذخیره)
- * الهام از LifeOS: dues are derived, not stored
- * هر due یه stable ID داره: `${planId}:${index}`
- */
-/**
- * ✅ سررسیدهای یه Plan رو محاسبه می‌کنه (derived)
- * قسط آخر با lastInstallmentAmount محاسبه می‌شه (اگه تقسیم اعشاری داشت)
- */
 const calculatePlanDues = (plan) => {
     const dues = []
     const startDate = new Date(plan.startDate)
     const count = plan.installmentsCount || 1
     const totalAmount = Number(plan.totalAmount) || 0
 
-    // ✅ مبلغ هر قسط (به جز آخر)
     const normalAmount = plan.installmentAmount
         ? Number(plan.installmentAmount)
         : Math.floor(totalAmount / count)
 
-    // ✅ مبلغ قسط آخر (با باقیمانده)
     const lastAmount = plan.lastInstallmentAmount
         ? Number(plan.lastInstallmentAmount)
         : (totalAmount - normalAmount * (count - 1))
@@ -201,7 +187,6 @@ const calculatePlanDues = (plan) => {
                 dueDate.setMonth(startDate.getMonth() + i)
         }
 
-        // ✅ قسط آخر با مبلغ متفاوت
         const isLast = i === count - 1
         const amount = isLast ? lastAmount : normalAmount
 
@@ -258,7 +243,6 @@ const financeSlice = createSlice({
 
         deleteAccount: (state, action) => {
             state.accounts = state.accounts.filter(a => a.id !== action.payload)
-            // تراکنش‌های مربوطه هم حذف می‌شن
             state.transactions = state.transactions.filter(t =>
                 t.accountId !== action.payload && t.toAccountId !== action.payload
             )
@@ -268,9 +252,8 @@ const financeSlice = createSlice({
         // ✅ تراکنش‌ها (Transactions)
         // ─────────────────────────────────────
         addTransaction: (state, action) => {
-
             const newTx = {
-                id: action.payload.id || uuidv4(),  // ✅ اجازه دادن به id خارجی
+                id: action.payload.id || uuidv4(),
                 accountId: action.payload.accountId,
                 type: action.payload.type,
                 amount: parseFloat(action.payload.amount) || 0,
@@ -285,7 +268,6 @@ const financeSlice = createSlice({
                 toAmount: action.payload.toAmount ? parseFloat(action.payload.toAmount) : null,
                 khumsRelevant: action.payload.khumsRelevant !== false,
                 zakatRelevant: action.payload.zakatRelevant || false,
-                // ✅ فیلدهای ارتباطی
                 taskId: action.payload.taskId || null,
                 projectId: action.payload.projectId || null,
                 planId: action.payload.planId || null,
@@ -295,7 +277,6 @@ const financeSlice = createSlice({
 
             state.transactions.push(newTx)
 
-            // ✅ به‌روزرسانی موجودی
             const fromAcc = state.accounts.find(a => a.id === newTx.accountId)
             if (fromAcc) {
                 if (newTx.type === 'income') {
@@ -319,7 +300,6 @@ const financeSlice = createSlice({
 
             const oldTx = state.transactions[idx]
 
-            // ✅ برگرداندن اثر قدیمی
             const oldAcc = state.accounts.find(a => a.id === oldTx.accountId)
             if (oldAcc) {
                 if (oldTx.type === 'income') oldAcc.balance -= oldTx.amount
@@ -331,14 +311,12 @@ const financeSlice = createSlice({
                 }
             }
 
-            // ✅ اعمال تغییرات
             state.transactions[idx] = {
                 ...oldTx,
                 ...action.payload,
                 updatedAt: new Date().toISOString()
             }
 
-            // ✅ اعمال اثر جدید
             const newTx = state.transactions[idx]
             const newAcc = state.accounts.find(a => a.id === newTx.accountId)
             if (newAcc) {
@@ -356,7 +334,6 @@ const financeSlice = createSlice({
             const tx = state.transactions.find(t => t.id === action.payload)
             if (!tx) return
 
-            // ✅ برگرداندن اثر روی موجودی
             const acc = state.accounts.find(a => a.id === tx.accountId)
             if (acc) {
                 if (tx.type === 'income') acc.balance -= tx.amount
@@ -372,7 +349,7 @@ const financeSlice = createSlice({
         },
 
         // ─────────────────────────────────────
-        // ✅ پلن‌ها (Plans — وام، بدهی، طلب)
+        // ✅ پلن‌ها (Plans)
         // ─────────────────────────────────────
         addPlan: (state, action) => {
             const newPlan = {
@@ -390,26 +367,17 @@ const financeSlice = createSlice({
                 periodicity: action.payload.periodicity || 'monthly',
                 accountId: action.payload.accountId || null,
                 counterparty: action.payload.counterparty || '',
-                // ⚠️ بعد از ایجاد قابل ویرایش نیست
                 termsLocked: true,
                 isActive: true,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 lastInstallmentAmount: action.payload.lastInstallmentAmount
                     ? parseFloat(action.payload.lastInstallmentAmount)
-                    : null,
-                periodicity: action.payload.periodicity || 'monthly',
-                accountId: action.payload.accountId || null,
-                counterparty: action.payload.counterparty || '',
-                termsLocked: true,
-                isActive: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                    : null
             }
             state.plans.push(newPlan)
         },
 
-        // ⚠️ فقط فیلدهای غیر-terms قابل ویرایش
         updatePlan: (state, action) => {
             const idx = state.plans.findIndex(p => p.id === action.payload.id)
             if (idx === -1) return
@@ -432,7 +400,6 @@ const financeSlice = createSlice({
             state.planDues = state.planDues.filter(d => d.planId !== action.payload)
         },
 
-        // ✅ پرداخت یه قسط
         payPlanDue: (state, action) => {
             const { planId, dueIndex, paidAmount, paidDate, transactionId, notes } = action.payload
             const existingIdx = state.planDues.findIndex(
@@ -492,7 +459,7 @@ const financeSlice = createSlice({
         },
 
         // ─────────────────────────────────────
-        // ✅ دسته‌بندی‌ها (Categories)
+        // ✅ دسته‌بندی‌ها
         // ─────────────────────────────────────
         addCategory: (state, action) => {
             const { type, category } = action.payload
@@ -521,7 +488,7 @@ const financeSlice = createSlice({
         },
 
         // ─────────────────────────────────────
-        // ✅ تنظیمات اسلامی
+        // ✅ تنظیمات
         // ─────────────────────────────────────
         updateIslamicSettings: (state, action) => {
             state.islamicSettings = { ...state.islamicSettings, ...action.payload }
@@ -532,9 +499,6 @@ const financeSlice = createSlice({
                 (state.islamicSettings.khumsPaid || 0) + parseFloat(action.payload.amount || 0)
         },
 
-        // ─────────────────────────────────────
-        // ✅ تنظیمات ارز
-        // ─────────────────────────────────────
         updateCurrencyRates: (state, action) => {
             state.currencySettings.rates = {
                 ...state.currencySettings.rates,
@@ -547,9 +511,6 @@ const financeSlice = createSlice({
             state.currencySettings = { ...state.currencySettings, ...action.payload }
         },
 
-        // ─────────────────────────────────────
-        // ✅ تنظیمات عمومی
-        // ─────────────────────────────────────
         updateSettings: (state, action) => {
             state.settings = { ...state.settings, ...action.payload }
         },
@@ -574,9 +535,6 @@ const financeSlice = createSlice({
             Object.assign(state, getInitialState())
         },
 
-        // ─────────────────────────────────────
-        // ✅ Loading/Error
-        // ─────────────────────────────────────
         setLoading: (state, action) => {
             state.loading = action.payload
         },
@@ -584,6 +542,141 @@ const financeSlice = createSlice({
         setError: (state, action) => {
             state.error = action.payload
         }
+    },
+
+    // ═══════════════════════════════════════════════
+    // ✅ Extra Reducers — برای Sync
+    // ═══════════════════════════════════════════════
+    extraReducers: (builder) => {
+        // ✅ Accounts
+        builder.addCase('sync/mergeFinanceAccounts', (state, action) => {
+            const remoteItems = action.payload?.items || []
+
+            for (const remote of remoteItems) {
+                if (remote.deletedAt || remote.deleted_at) {
+                    state.accounts = state.accounts.filter(a => a.id !== remote.id)
+                    continue
+                }
+
+                const index = state.accounts.findIndex(a => a.id === remote.id)
+
+                if (index === -1) {
+                    state.accounts.push(remote)
+                } else {
+                    const local = state.accounts[index]
+                    const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+                    const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+                    if (remoteTime > localTime) {
+                        state.accounts[index] = { ...local, ...remote }
+                    }
+                }
+            }
+        })
+
+        // ✅ Transactions
+        builder.addCase('sync/mergeFinanceTransactions', (state, action) => {
+            const remoteItems = action.payload?.items || []
+
+            for (const remote of remoteItems) {
+                if (remote.deletedAt || remote.deleted_at) {
+                    state.transactions = state.transactions.filter(t => t.id !== remote.id)
+                    continue
+                }
+
+                const index = state.transactions.findIndex(t => t.id === remote.id)
+
+                if (index === -1) {
+                    state.transactions.push(remote)
+                } else {
+                    const local = state.transactions[index]
+                    const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+                    const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+                    if (remoteTime > localTime) {
+                        state.transactions[index] = { ...local, ...remote }
+                    }
+                }
+            }
+        })
+
+        // ✅ Plans
+        builder.addCase('sync/mergeFinancePlans', (state, action) => {
+            const remoteItems = action.payload?.items || []
+
+            for (const remote of remoteItems) {
+                if (remote.deletedAt || remote.deleted_at) {
+                    state.plans = state.plans.filter(p => p.id !== remote.id)
+                    continue
+                }
+
+                const index = state.plans.findIndex(p => p.id === remote.id)
+
+                if (index === -1) {
+                    state.plans.push(remote)
+                } else {
+                    const local = state.plans[index]
+                    const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+                    const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+                    if (remoteTime > localTime) {
+                        state.plans[index] = { ...local, ...remote }
+                    }
+                }
+            }
+        })
+
+        // ✅ Plan Dues
+        builder.addCase('sync/mergeFinancePlanDues', (state, action) => {
+            const remoteItems = action.payload?.items || []
+
+            for (const remote of remoteItems) {
+                if (remote.deletedAt || remote.deleted_at) {
+                    state.planDues = state.planDues.filter(d => d.id !== remote.id)
+                    continue
+                }
+
+                const index = state.planDues.findIndex(d => d.id === remote.id)
+
+                if (index === -1) {
+                    state.planDues.push(remote)
+                } else {
+                    const local = state.planDues[index]
+                    const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+                    const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+                    if (remoteTime > localTime) {
+                        state.planDues[index] = { ...local, ...remote }
+                    }
+                }
+            }
+        })
+
+        // ✅ Budgets
+        builder.addCase('sync/mergeFinanceBudgets', (state, action) => {
+            const remoteItems = action.payload?.items || []
+
+            for (const remote of remoteItems) {
+                if (remote.deletedAt || remote.deleted_at) {
+                    state.budgets = state.budgets.filter(b => b.id !== remote.id)
+                    continue
+                }
+
+                const index = state.budgets.findIndex(b => b.id === remote.id)
+
+                if (index === -1) {
+                    state.budgets.push(remote)
+                } else {
+                    const local = state.budgets[index]
+                    const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+                    const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+                    if (remoteTime > localTime) {
+                        state.budgets[index] = { ...local, ...remote }
+                    }
+                }
+            }
+        })
     }
 })
 
@@ -620,27 +713,17 @@ export const {
 } = financeSlice.actions
 
 // ═══════════════════════════════════════════════
-// ✅ Selectors (محاسبات)
+// ✅ Selectors
 // ═══════════════════════════════════════════════
 
-/**
- * ✅ محاسبه سررسیدهای یه Plan (derived)
- */
 export const selectPlanDues = (plan) => calculatePlanDues(plan)
 
-/**
- * ✅ محاسبه مجموع موجودی همه حساب‌ها به یه ارز
- * (نیاز به نرخ تبدیل داره — فعلاً ساده جمع می‌کنه)
- */
 export const selectTotalBalance = (state) => {
     return state.finance.accounts
         .filter(a => a.isActive)
         .reduce((sum, acc) => sum + (acc.balance || 0), 0)
 }
 
-/**
- * ✅ محاسبه درآمد/هزینه در یه بازه
- */
 export const selectMonthlySummary = (state, year, month) => {
     const transactions = state.finance.transactions.filter(t => {
         const d = new Date(t.date)
@@ -658,10 +741,6 @@ export const selectMonthlySummary = (state, year, month) => {
     return { income, expense, net: income - expense }
 }
 
-/**
- * ✅ محاسبه خمس (فقط با مخارج سالانه)
- * ⚠️ این فقط یه تخمین اولیه است — برای محاسبه دقیق نیاز به بررسی فقهی داره
- */
 export const selectKhumsCalculation = (state) => {
     const settings = state.finance.islamicSettings
     const yearStart = settings.khumsYearStart
@@ -693,15 +772,12 @@ export const selectKhumsCalculation = (state) => {
     }
 }
 
-/**
- * ✅ محاسبه زکات (طلا و نقره)
- */
 export const selectZakatCalculation = (state) => {
     const settings = state.finance.islamicSettings
     const goldAccounts = state.finance.accounts.filter(a => a.type === 'gold')
     const silverAccounts = state.finance.accounts.filter(a => a.type === 'silver')
 
-    const totalGold = goldAccounts.reduce((sum, a) => sum + (a.balance || 0), 0) // به گرم
+    const totalGold = goldAccounts.reduce((sum, a) => sum + (a.balance || 0), 0)
     const totalSilver = silverAccounts.reduce((sum, a) => sum + (a.balance || 0), 0)
 
     let zakatGold = 0
@@ -725,9 +801,6 @@ export const selectZakatCalculation = (state) => {
     }
 }
 
-/**
- * ✅ پیشرفت بودجه یه دسته در بازه فعلی
- */
 export const selectBudgetProgress = (state, budget) => {
     const start = new Date(budget.startDate)
     const end = new Date(budget.endDate)

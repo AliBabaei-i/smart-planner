@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-// ✅ رنگ‌های یادداشت (شبیه Google Keep)
+// ✅ رنگ‌های یادداشت
 export const NOTE_COLORS = [
   { id: 'default', value: 'transparent', border: 'border-gray-200 dark:border-gray-700' },
   { id: 'yellow', value: '#fef3c7', dark: '#78350f', border: 'border-yellow-300 dark:border-yellow-800' },
@@ -150,6 +150,38 @@ const notesSlice = createSlice({
       state.notes = []
       saveToStorage(state)
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    builder.addCase('sync/mergeNotes', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        if (remote.deletedAt || remote.deleted_at) {
+          state.notes = state.notes.filter(n => n.id !== remote.id)
+          continue
+        }
+
+        const index = state.notes.findIndex(n => n.id === remote.id)
+
+        if (index === -1) {
+          state.notes.unshift(remote)
+        } else {
+          const local = state.notes[index]
+          const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.notes[index] = { ...local, ...remote }
+          }
+        }
+      }
+
+      saveToStorage(state)
+    })
   }
 })
 

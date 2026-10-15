@@ -42,11 +42,9 @@ const tasksSlice = createSlice({
         subtasks: action.payload.subtasks || [],
         notes: '',
         tags: tags,
-        // ✅ فیلدهای تکرار
         recurring: action.payload.recurring || null,
         recurringEndDate: action.payload.recurringEndDate || null,
         parentTaskId: null,
-        // ✅ فیلدهای مالی
         financialCost: action.payload.financialCost 
           ? parseFloat(action.payload.financialCost) 
           : null,
@@ -78,7 +76,7 @@ const tasksSlice = createSlice({
       }
     },
 
-    // ✅ لینک تراکنش به تسک (برای جلوگیری از تکرار)
+    // ✅ لینک تراکنش به تسک
     linkTransactionToTask: (state, action) => {
       const { taskId, transactionId } = action.payload
       const task = state.tasks.find(t => t.id === taskId)
@@ -248,7 +246,6 @@ const tasksSlice = createSlice({
           status: 'todo',
           actualTime: 0,
           dueDate: todayStr,
-          // ✅ فیلدهای مالی هم کپی میشن
           financialCost: parentTask.financialCost,
           financialCategory: parentTask.financialCategory,
           financialTransactionId: null,
@@ -300,6 +297,48 @@ const tasksSlice = createSlice({
         }
       })
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    // ✅ Merge tasks از سرور
+    builder.addCase('sync/mergeTasks', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        // ✅ اگه deleted_at داره → حذف کن
+        if (remote.deletedAt || remote.deleted_at) {
+          state.tasks = state.tasks.filter(t => t.id !== remote.id)
+          continue
+        }
+
+        const index = state.tasks.findIndex(t => t.id === remote.id)
+
+        if (index === -1) {
+          // ✅ تسک جدید از سرور
+          state.tasks.push(remote)
+          // ✅ تگ‌ها رو هم اضافه کن
+          if (remote.tags && Array.isArray(remote.tags)) {
+            remote.tags.forEach(tag => {
+              if (!state.availableTags.includes(tag)) {
+                state.availableTags.push(tag)
+              }
+            })
+          }
+        } else {
+          // ✅ تسک موجود → Last-Write-Wins
+          const local = state.tasks[index]
+          const localTime = new Date(local.updatedAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.tasks[index] = { ...local, ...remote }
+          }
+        }
+      }
+    })
   }
 })
 
@@ -318,7 +357,7 @@ export const {
   addTagToTask,
   removeTagFromTask,
   removeAvailableTag,
-  linkTransactionToTask  // ✅ جدید
+  linkTransactionToTask
 } = tasksSlice.actions
 
 export default tasksSlice.reducer

@@ -166,6 +166,67 @@ const growthSlice = createSlice({
       state.skills = []
       saveToStorage(state)
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    // ✅ Journal
+    builder.addCase('sync/mergeJournals', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        if (remote.deletedAt || remote.deleted_at) {
+          state.journals = state.journals.filter(j => j.id !== remote.id)
+          continue
+        }
+
+        const index = state.journals.findIndex(j => j.id === remote.id)
+
+        if (index === -1) {
+          state.journals.unshift(remote)
+        } else {
+          const local = state.journals[index]
+          const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.journals[index] = { ...local, ...remote }
+          }
+        }
+      }
+
+      saveToStorage(state)
+    })
+
+    // ✅ Skills
+    builder.addCase('sync/mergeSkills', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        if (remote.deletedAt || remote.deleted_at) {
+          state.skills = state.skills.filter(s => s.id !== remote.id)
+          continue
+        }
+
+        const index = state.skills.findIndex(s => s.id === remote.id)
+
+        if (index === -1) {
+          state.skills.unshift(remote)
+        } else {
+          const local = state.skills[index]
+          const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.skills[index] = { ...local, ...remote }
+          }
+        }
+      }
+
+      saveToStorage(state)
+    })
   }
 })
 
