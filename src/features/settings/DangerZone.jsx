@@ -12,62 +12,115 @@ import {
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { syncApi } from '../../services/syncApi'
+import { syncQueue, lastSync } from '../../services/syncQueue'
 
 const DangerZone = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [confirmType, setConfirmType] = useState(null)
+  const [isResetting, setIsResetting] = useState(false)
 
   const handleReset = (type) => {
     setConfirmType(type)
   }
 
-  const confirmReset = () => {
+  const confirmReset = async () => {
+    if (isResetting) return
+    setIsResetting(true)
+
+    const toastId = toast.loading(
+      t('settings.dangerZone.resetting') || 'در حال حذف داده‌ها از سرور...',
+      { position: "bottom-left" }
+    )
+
     try {
       switch (confirmType) {
-        case 'all':
+        case 'all': {
+          // ✅ ۱. سرور
+          try {
+            await syncApi.reset()
+            console.log('✅ Server reset (all)')
+          } catch (e) {
+            console.warn('⚠️ Server reset failed:', e.message)
+          }
+          // ✅ ۲. Queue + lastSync
+          syncQueue.clear()
+          lastSync.clear()
+          // ✅ ۳. localStorage کامل
           localStorage.clear()
-          toast.success(t('settings.dangerZone.clearAll'), {
-            position: "bottom-left",
-            autoClose: 2000,
-          })
-          setTimeout(() => window.location.reload(), 1500)
           break
-        case 'tasks':
+        }
+
+        case 'tasks': {
+          // ✅ سرور — فقط tasks
+          try {
+            await syncApi.reset('tasks')
+            console.log('✅ Server reset (tasks)')
+          } catch (e) {
+            console.warn('⚠️ Server reset tasks failed:', e.message)
+          }
+          // ✅ local
           localStorage.removeItem('smart-planner-tasks')
           localStorage.removeItem('smart-planner-achievements')
-          toast.success(t('settings.dangerZone.resetTasks'), {
-            position: "bottom-left",
-            autoClose: 2000,
-          })
-          setTimeout(() => window.location.reload(), 1500)
           break
-        case 'projects':
+        }
+
+        case 'projects': {
+          // ✅ سرور — فقط projects
+          try {
+            await syncApi.reset('projects')
+            console.log('✅ Server reset (projects)')
+          } catch (e) {
+            console.warn('⚠️ Server reset projects failed:', e.message)
+          }
+          // ✅ local
           localStorage.removeItem('smart-planner-projects')
-          toast.success(t('settings.dangerZone.resetProjects'), {
-            position: "bottom-left",
-            autoClose: 2000,
-          })
-          setTimeout(() => window.location.reload(), 1500)
           break
-        case 'settings':
+        }
+
+        case 'settings': {
+          // ✅ فقط local (سرور کاری نداره)
           localStorage.removeItem('smart-planner-theme')
           localStorage.removeItem('smart-planner-notifications')
           localStorage.removeItem('smart-planner-pomodoro-settings')
           localStorage.removeItem('smart-planner-dashboard-layout')
-          toast.success(t('settings.dangerZone.resetSettings'), {
-            position: "bottom-left",
-            autoClose: 2000,
-          })
-          setTimeout(() => window.location.reload(), 1500)
           break
+        }
+
         default:
           break
       }
+
+      // ✅ پیام موفق
+      const successKey = confirmType === 'all'
+        ? 'settings.dangerZone.clearAll'
+        : `settings.dangerZone.reset${confirmType.charAt(0).toUpperCase() + confirmType.slice(1)}`
+
+      toast.update(toastId, {
+        render: t(successKey) || 'داده‌ها با موفقیت حذف شد',
+        type: 'success',
+        isLoading: false,
+        autoClose: 2000,
+        position: "bottom-left"
+      })
+
+      // ✅ reload بعد از ۱.۵s
+      setTimeout(() => window.location.reload(), 1500)
+
     } catch (error) {
-      console.error('Error resetting:', error)
+      console.error('Reset error:', error)
+      toast.update(toastId, {
+        render: 'خطا در حذف داده‌ها: ' + error.message,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+        position: "bottom-left"
+      })
+    } finally {
+      setIsResetting(false)
+      setConfirmType(null)
     }
-    setConfirmType(null)
   }
 
   const getConfirmMessage = () => {
@@ -132,7 +185,7 @@ const DangerZone = () => {
         {dangerOptions.map(option => {
           const IconComponent = option.Icon
           return (
-            <div 
+            <div
               key={option.id}
               className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg flex-wrap gap-3"
             >
@@ -149,10 +202,11 @@ const DangerZone = () => {
                   </div>
                 </div>
               </div>
-              <Button 
-                variant={option.buttonVariant} 
+              <Button
+                variant={option.buttonVariant}
                 size="small"
                 onClick={() => handleReset(option.id)}
+                disabled={isResetting}
               >
                 {option.buttonText}
               </Button>
@@ -175,10 +229,11 @@ const DangerZone = () => {
               </div>
             </div>
           </div>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             size="small"
             onClick={() => handleReset('all')}
+            disabled={isResetting}
           >
             {t('settings.dangerZone.deleteButton')}
           </Button>
@@ -186,16 +241,16 @@ const DangerZone = () => {
       </div>
 
       <ConfirmDialog
-  isOpen={!!confirmType}
-  onClose={() => setConfirmType(null)}
-  onConfirm={confirmReset}
-  title={t('actions.confirm')}
-  message={getConfirmMessage()}
-  confirmText={t('settings.dangerZone.confirmDelete')}
-  cancelText={t('actions.cancel')}
-  variant="danger"
-  Icon={FiAlertTriangle}
-/>
+        isOpen={!!confirmType}
+        onClose={() => setConfirmType(null)}
+        onConfirm={confirmReset}
+        title={t('actions.confirm')}
+        message={getConfirmMessage()}
+        confirmText={t('settings.dangerZone.confirmDelete')}
+        cancelText={t('actions.cancel')}
+        variant="danger"
+        Icon={FiAlertTriangle}
+      />
     </Card>
   )
 }

@@ -41,6 +41,8 @@ import {
   downloadSampleFile,
   getStorageStats 
 } from '../../utils/dataExport'
+import { syncApi } from '../../services/syncApi'
+import { syncQueue, lastSync } from '../../services/syncQueue'
 
 const SettingsPage = () => {
   const { t } = useTranslation()
@@ -108,16 +110,59 @@ const SettingsPage = () => {
     event.target.value = ''
   }
 
-  const confirmClearData = () => {
-    const result = clearAllData()
-    if (result.success) {
-      toast.success(result.message, { position: "bottom-left", autoClose: 3000 })
-      setTimeout(() => window.location.reload(), 1500)
-    }
+  // ═══════════════════════════════════════════════
+  // ✅ حذف همه داده‌ها — با reset سرور
+  // ═══════════════════════════════════════════════
+  const confirmClearData = async () => {
     setClearConfirm(false)
+    
+    const toastId = toast.loading('در حال حذف داده‌ها از سرور...', { position: "bottom-left" })
+
+    try {
+      // ✅ ۱. پاک کردن سرور
+      try {
+        const resetResult = await syncApi.reset()
+        console.log('✅ Server reset:', resetResult)
+      } catch (e) {
+        console.warn('⚠️ Could not reset server:', e.message)
+        // ادامه بده — شاید آفلاین باشه
+      }
+
+      // ✅ ۲. پاک کردن sync queue و lastSync
+      try {
+        syncQueue.clear()
+        lastSync.clear()
+      } catch (e) {
+        console.warn('Queue clear error:', e)
+      }
+
+      // ✅ ۳. پاک کردن localStorage
+      const result = clearAllData()
+
+      toast.update(toastId, {
+        render: 'همه داده‌ها حذف شدند — در حال بازگشت به صفحه لاگین...',
+        type: 'success',
+        isLoading: false,
+        autoClose: 2000,
+        position: "bottom-left"
+      })
+
+      // ✅ ۴. reload بعد از ۱.۵s
+      setTimeout(() => window.location.reload(), 1500)
+
+    } catch (error) {
+      console.error('Clear data error:', error)
+      toast.update(toastId, {
+        render: 'خطا در حذف داده‌ها: ' + error.message,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+        position: "bottom-left"
+      })
+    }
   }
 
-  // ✅ راهنما با React Icons
+  // ✅ راهنما
   const helpItems = [
     { Icon: FiFolder, labelKey: 'nav.projects', descKey: 'projects.subtitle', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
     { Icon: FiCalendar, labelKey: 'nav.planning', descKey: 'planning.subtitle', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30' },
@@ -173,7 +218,6 @@ const SettingsPage = () => {
               <span>{t('settings.general.title')}</span>
             </h3>
             <div className="space-y-4">
-              {/* ذخیره خودکار */}
               <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -190,7 +234,6 @@ const SettingsPage = () => {
                 </div>
               </div>
 
-              {/* PWA */}
               <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
@@ -207,7 +250,6 @@ const SettingsPage = () => {
                 </div>
               </div>
 
-              {/* آفلاین */}
               <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -226,7 +268,6 @@ const SettingsPage = () => {
             </div>
           </Card>
 
-          {/* اطلاعات برنامه */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
               <FiInfo size={20} className="text-blue-600" />
@@ -264,7 +305,6 @@ const SettingsPage = () => {
             </div>
           </Card>
 
-          {/* ✅ راهنما با React Icons */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
               <FiBookOpen size={20} className="text-blue-600" />
@@ -304,10 +344,8 @@ const SettingsPage = () => {
       {activeTab === 'theme' && <ThemeSettings />}
       {activeTab === 'pomodoro' && <PomodoroSettings />}
       
-      {/* تب داده‌ها */}
       {activeTab === 'data' && (
         <div className="space-y-6">
-          {/* آمار */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
               <FiDatabase size={20} className="text-blue-600" />
@@ -345,7 +383,6 @@ const SettingsPage = () => {
             </div>
           </Card>
 
-          {/* فایل نمونه */}
           <Card className="p-6 border-2 border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/10">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -366,7 +403,6 @@ const SettingsPage = () => {
             </div>
           </Card>
 
-          {/* مدیریت داده‌ها */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
               <FiDatabase size={20} className="text-blue-600" />
@@ -414,6 +450,7 @@ const SettingsPage = () => {
                 </div>
               </div>
 
+              {/* ✅ دکمه حذف اول — با reset سرور */}
               <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20 flex-wrap gap-3">
                 <div className="flex-1 min-w-[200px]">
                   <h4 className="font-medium text-red-900 dark:text-red-100 text-sm flex items-center gap-2">
@@ -432,7 +469,6 @@ const SettingsPage = () => {
             </div>
           </Card>
 
-          {/* راهنمای Import */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
               <FiFileText size={20} className="text-blue-600" />
@@ -472,6 +508,7 @@ const SettingsPage = () => {
             </div>
           </Card>
 
+          {/* ⚠️ DangerZone هم باید reset سرور رو صدا بزنه */}
           <DangerZone />
         </div>
       )}
@@ -490,4 +527,4 @@ const SettingsPage = () => {
   )
 }
 
-export default SettingsPage 
+export default SettingsPage
