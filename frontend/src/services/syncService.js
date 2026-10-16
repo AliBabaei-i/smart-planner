@@ -88,7 +88,7 @@ class SyncService {
     this.notify({ status: 'syncing' })
 
     try {
-      const queue = syncQueue.getAll()
+      const queue = await syncQueue.getAll()
 
       // ✅ تصمیم درباره since:
       // - اگه needsFullSync هست → null (کل داده‌ها)
@@ -107,8 +107,8 @@ class SyncService {
 
         // ✅ صف رو پاک کن اگه خطای per-entity نبود
         if (!result.push.errors || result.push.errors.length === 0) {
-          syncQueue.clear()
-        }
+  await syncQueue.clear()
+}
       }
 
       // ✅ Pull

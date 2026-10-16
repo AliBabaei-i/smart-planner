@@ -1,12 +1,22 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
-import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
-import storage from 'redux-persist/lib/storage'
-import { createMigrate } from 'redux-persist'
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  createMigrate
+} from 'redux-persist'
+
+// ✅ Custom storage using IndexedDB (با auto-migration از localStorage)
+import storage from './persistStorage'
+
 import { migrations, CURRENT_VERSION } from './migrations'
 
-// ═══════════════════════════════════════════════
-// ✅ Reducers
-// ═══════════════════════════════════════════════
+// Reducers
 import tasksReducer from '../features/tasks/tasksSlice'
 import projectsReducer from '../features/projects/projectsSlice'
 import habitsReducer from '../features/habits/habitsSlice'
@@ -20,16 +30,16 @@ import themeReducer from '../features/theme/themeSlice'
 import notificationsReducer from '../features/notifications/notificationsSlice'
 import financeReducer from '../features/finance/financeSlice'
 import authReducer from '../features/auth/authSlice'
-
-
 import syncReducer from '../features/sync/syncSlice'
+
 import { syncMiddleware } from '../services/syncMiddleware'
+
 // ═══════════════════════════════════════════════
 // ✅ Root Reducer
 // ═══════════════════════════════════════════════
 const rootReducer = combineReducers({
   tasks: tasksReducer,
-  sync: syncReducer,  
+  sync: syncReducer,
   projects: projectsReducer,
   habits: habitsReducer,
   notes: notesReducer,
@@ -41,7 +51,7 @@ const rootReducer = combineReducers({
   theme: themeReducer,
   notifications: notificationsReducer,
   finance: financeReducer,
-  auth: authReducer,
+  auth: authReducer
 })
 
 // ═══════════════════════════════════════════════
@@ -50,13 +60,11 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: 'smart-planner',
   version: CURRENT_VERSION,
-  storage,
-
-  // ✅ فقط این slice ها persist بشن
+  storage, // ✅ IndexedDB
   whitelist: [
     'auth',
     'tasks',
-    'sync', 
+    'sync',
     'projects',
     'habits',
     'notes',
@@ -68,23 +76,12 @@ const persistConfig = {
     'notifications',
     'finance'
   ],
-
-  // ✅ این slice ها persist نشن (state موقت)
   blacklist: ['pomodoro'],
-
-  // ✅ Migration
   migrate: createMigrate(migrations, { debug: false }),
-
-  // ✅ State های غیرقابل serialize نادیده گرفته بشن
   serialize: true,
-
-  // ✅ timeout برای rehydration
-  timeout: 5000
+  timeout: 15000 // ✅ افزایش برای IndexedDB
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Persisted Reducer
-// ═══════════════════════════════════════════════
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 
 // ═══════════════════════════════════════════════
@@ -95,7 +92,6 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // ✅ نادیده گرفتن actions مربوط به redux-persist
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
       }
     }).concat(syncMiddleware),
@@ -107,7 +103,6 @@ export const store = configureStore({
 // ═══════════════════════════════════════════════
 export const persistor = persistStore(store)
 
-// ✅ فقط در dev، store رو روی window بذار برای debugging
 if (import.meta.env.DEV) {
   window.store = store
   window.persistor = persistor

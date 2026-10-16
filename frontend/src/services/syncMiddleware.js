@@ -139,7 +139,7 @@ const extractChanges = (action, state) => {
 // ✅ Middleware
 // ═══════════════════════════════════════════════
 export const syncMiddleware = (store) => (next) => (action) => {
-  // ✅ دیباگ: ببین هر action رد می‌شه
+  // ✅ دیباگ
   if (action.type && !action.type.startsWith('@@')) {
     console.log('🔍 [MW] Action:', action.type, '| shouldSync:', shouldSync(action))
   }
@@ -153,8 +153,14 @@ export const syncMiddleware = (store) => (next) => (action) => {
       console.log('🎯 [MW] Extracted:', change)
 
       if (change) {
+        // ✅ fire-and-forget (IndexedDB async)
         syncQueue.add(change)
-        console.log('📝 [MW] Queued for sync:', change.entity, change.data?.id)
+          .then(() => {
+            console.log('📝 [MW] Queued for sync:', change.entity, change.data?.id)
+          })
+          .catch((err) => {
+            console.error('❌ [MW] Queue add failed:', err)
+          })
       } else {
         console.warn('⚠️ [MW] shouldSync=true but extractChanges returned null')
       }
@@ -165,5 +171,4 @@ export const syncMiddleware = (store) => (next) => (action) => {
 
   return result
 }
-
 export default syncMiddleware   
