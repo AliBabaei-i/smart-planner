@@ -2,8 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import {
-  FiCloud, FiCloudOff, FiRefreshCw, FiCheck,
-  FiAlertCircle, FiWifiOff
+  FiCloud,
+  FiCloudOff,
+  FiRefreshCw,
+  FiCheck,
+  FiAlertCircle,
+  FiWifiOff,
+  FiZap,
+  FiClock,
+  FiDatabase
 } from 'react-icons/fi'
 import {
   selectSyncStatus,
@@ -14,7 +21,7 @@ import { syncService } from '../../services/syncService'
 import { formatRelativeTimeByLang } from '../../utils/formatters'
 
 const SyncIndicator = () => {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
   const status = useSelector(selectSyncStatus)
@@ -23,7 +30,11 @@ const SyncIndicator = () => {
 
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [showDetails, setShowDetails] = useState(false)
+  const [isFullSyncing, setIsFullSyncing] = useState(false)
 
+  // ═══════════════════════════════════════════════
+  // ✅ Online/Offline listener
+  // ═══════════════════════════════════════════════
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
@@ -37,39 +48,94 @@ const SyncIndicator = () => {
     }
   }, [])
 
+  // ═══════════════════════════════════════════════
+  // ✅ Handlers
+  // ═══════════════════════════════════════════════
   const handleManualSync = useCallback(async () => {
+    if (status === 'syncing' || !isOnline) return
     await syncService.forceSync()
-  }, [])
+  }, [status, isOnline])
 
-  // ✅ آیکون بر اساس وضعیت
+  const handleFullSync = useCallback(async () => {
+    if (isFullSyncing || !isOnline) return
+    setIsFullSyncing(true)
+    try {
+      await syncService.forceFullSync()
+    } finally {
+      setIsFullSyncing(false)
+      setShowDetails(false)
+    }
+  }, [isFullSyncing, isOnline])
+
+  // ═══════════════════════════════════════════════
+  // ✅ Icon بر اساس وضعیت
+  // ═══════════════════════════════════════════════
   const getIcon = () => {
-    if (!isOnline) return <FiWifiOff size={14} className="text-amber-500" />
-    if (status === 'syncing') return <FiRefreshCw size={14} className="text-blue-500 animate-spin" />
-    if (status === 'error') return <FiAlertCircle size={14} className="text-red-500" />
-    if (status === 'synced') return <FiCheck size={14} className="text-green-500" />
+    if (!isOnline) {
+      return <FiWifiOff size={14} className="text-amber-500" />
+    }
+    if (status === 'syncing' || isFullSyncing) {
+      return <FiRefreshCw size={14} className="text-blue-500 animate-spin" />
+    }
+    if (status === 'error') {
+      return <FiAlertCircle size={14} className="text-red-500" />
+    }
+    if (status === 'synced') {
+      return <FiCheck size={14} className="text-green-500" />
+    }
     return <FiCloud size={14} className="text-gray-400" />
   }
 
+  // ═══════════════════════════════════════════════
   // ✅ متن بر اساس وضعیت
+  // ═══════════════════════════════════════════════
   const getText = () => {
-    if (!isOnline) return isPersian ? 'آفلاین' : 'Offline'
-    if (status === 'syncing') return isPersian ? 'در حال sync...' : 'Syncing...'
-    if (status === 'error') return isPersian ? 'خطای sync' : 'Sync error'
-    if (status === 'synced') return isPersian ? 'sync شد' : 'Synced'
+    if (!isOnline) {
+      return isPersian ? 'آفلاین' : 'Offline'
+    }
+    if (isFullSyncing) {
+      return isPersian ? 'Sync کامل...' : 'Full sync...'
+    }
+    if (status === 'syncing') {
+      return isPersian ? 'در حال Sync...' : 'Syncing...'
+    }
+    if (status === 'error') {
+      return isPersian ? 'خطای Sync' : 'Sync error'
+    }
+    if (status === 'synced') {
+      return isPersian ? 'Sync شد' : 'Synced'
+    }
     return isPersian ? 'آنلاین' : 'Online'
   }
 
+  // ═══════════════════════════════════════════════
   // ✅ رنگ بر اساس وضعیت
+  // ═══════════════════════════════════════════════
   const getColor = () => {
-    if (!isOnline) return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
-    if (status === 'syncing') return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
-    if (status === 'error') return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
-    if (status === 'synced') return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+    if (!isOnline) {
+      return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+    }
+    if (status === 'syncing' || isFullSyncing) {
+      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+    }
+    if (status === 'error') {
+      return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+    }
+    if (status === 'synced') {
+      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+    }
     return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700'
   }
 
+  const isBusy = status === 'syncing' || isFullSyncing
+  const canSync = isOnline && !isBusy
+
+  // ═══════════════════════════════════════════════
+  // ✅ Render
+  // ═══════════════════════════════════════════════
   return (
     <div className="relative">
+      {/* دکمه اصلی */}
       <button
         onClick={() => setShowDetails(prev => !prev)}
         className={`
@@ -78,69 +144,145 @@ const SyncIndicator = () => {
           ${getColor()}
         `}
         title={getText()}
+        aria-label={getText()}
       >
         {getIcon()}
         <span className="hidden sm:inline">{getText()}</span>
         {queueSize > 0 && (
-          <span className="bg-white/50 dark:bg-black/30 px-1.5 rounded-full text-[10px]">
+          <span className="bg-white/70 dark:bg-black/30 px-1.5 rounded-full text-[10px] font-bold">
             {queueSize}
           </span>
         )}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown جزئیات */}
       {showDetails && (
         <>
+          {/* Backdrop */}
           <div
             className="fixed inset-0 z-30"
             onClick={() => setShowDetails(false)}
+            aria-hidden="true"
           />
-          <div className="absolute top-full end-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-40 p-3 space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {isPersian ? 'وضعیت Sync' : 'Sync Status'}
-              </span>
+
+          {/* Panel */}
+          <div className="absolute top-full end-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-40 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+              <div className="flex items-center gap-2">
+                <FiDatabase size={14} className="text-blue-600 dark:text-blue-400" />
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  {isPersian ? 'وضعیت Sync' : 'Sync Status'}
+                </span>
+              </div>
+
+              {/* دکمه sync معمولی */}
               <button
                 onClick={handleManualSync}
-                disabled={status === 'syncing' || !isOnline}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canSync}
+                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isPersian ? 'Sync دستی' : 'Manual sync'}
               >
-                {isPersian ? 'sync دستی' : 'Sync now'}
+                <FiRefreshCw size={12} className={isBusy ? 'animate-spin' : ''} />
+                <span>{isPersian ? 'Sync' : 'Sync'}</span>
               </button>
             </div>
 
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between">
+            {/* Body */}
+            <div className="p-3 space-y-2.5 text-xs">
+              {/* اتصال */}
+              <div className="flex justify-between items-center">
                 <span className="text-gray-500 dark:text-gray-400">
                   {isPersian ? 'اتصال:' : 'Connection:'}
                 </span>
-                <span className={isOnline ? 'text-green-600' : 'text-amber-600'}>
-                  {isOnline ? (isPersian ? 'آنلاین' : 'Online') : (isPersian ? 'آفلاین' : 'Offline')}
+                <span className={`flex items-center gap-1 font-medium ${
+                  isOnline ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  {isOnline ? (
+                    <>
+                      <FiCloud size={10} />
+                      {isPersian ? 'آنلاین' : 'Online'}
+                    </>
+                  ) : (
+                    <>
+                      <FiWifiOff size={10} />
+                      {isPersian ? 'آفلاین' : 'Offline'}
+                    </>
+                  )}
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              {/* وضعیت */}
+              <div className="flex justify-between items-center">
                 <span className="text-gray-500 dark:text-gray-400">
                   {isPersian ? 'وضعیت:' : 'Status:'}
                 </span>
-                <span>{getText()}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">
-                  {isPersian ? 'تغییرات در صف:' : 'Queued:'}
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {getText()}
                 </span>
-                <span>{queueSize}</span>
               </div>
 
+              {/* صف */}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 dark:text-gray-400">
+                  {isPersian ? 'تغییرات در صف:' : 'Queued changes:'}
+                </span>
+                <span className={`font-medium ${queueSize > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-200'}`}>
+                  {queueSize}
+                </span>
+              </div>
+
+              {/* آخرین sync */}
               {lastSyncAt && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {isPersian ? 'آخرین sync:' : 'Last sync:'}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <FiClock size={10} />
+                    {isPersian ? 'آخرین Sync:' : 'Last sync:'}
                   </span>
-                  <span>{formatRelativeTimeByLang(lastSyncAt)}</span>
+                  <span className="text-gray-700 dark:text-gray-200">
+                    {formatRelativeTimeByLang(lastSyncAt, i18n.language)}
+                  </span>
                 </div>
               )}
+            </div>
+
+            {/* Force Full Sync */}
+            <div className="p-3 pt-0">
+              <button
+                onClick={handleFullSync}
+                disabled={!canSync}
+                className="
+                  w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg
+                  text-xs font-medium
+                  bg-amber-50 dark:bg-amber-900/20
+                  text-amber-700 dark:text-amber-300
+                  hover:bg-amber-100 dark:hover:bg-amber-900/40
+                  border border-amber-200 dark:border-amber-800
+                  transition-colors
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
+                title={
+                  isPersian
+                    ? 'دریافت مجدد همه داده‌ها از سرور'
+                    : 'Re-fetch all data from server'
+                }
+              >
+                <FiZap size={12} className={isFullSyncing ? 'animate-pulse' : ''} />
+                <span>
+                  {isFullSyncing
+                    ? (isPersian ? 'در حال Full Sync...' : 'Full syncing...')
+                    : (isPersian ? 'Full Sync (اجباری)' : 'Force Full Sync')
+                  }
+                </span>
+              </button>
+
+              {/* توضیح کوچک */}
+              <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 text-center leading-relaxed">
+                {isPersian
+                  ? 'در صورت عدم هماهنگی بین دستگاه‌ها، از Full Sync استفاده کنید'
+                  : 'Use Full Sync if devices are out of sync'
+                }
+              </p>
             </div>
           </div>
         </>
