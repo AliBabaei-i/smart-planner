@@ -8,7 +8,7 @@ export const HABIT_COLORS = [
   '#f97316', '#6366f1'
 ]
 
-// ✅ آیکون‌های پیش‌فرض - React Icons (فقط نام کامپوننت، نه ایموجی)
+// ✅ آیکون‌های پیش‌فرض
 export const HABIT_ICON_OPTIONS = [
   { id: 'water', Icon: 'FiDroplet', color: '#06b6d4' },
   { id: 'book', Icon: 'FiBook', color: '#3b82f6' },
@@ -110,11 +110,12 @@ const habitsSlice = createSlice({
         id: uuidv4(),
         name: action.payload.name,
         description: action.payload.description || '',
-        iconId: action.payload.iconId || 'target', // ✅ استفاده از iconId
+        iconId: action.payload.iconId || 'target',
         color: action.payload.color || HABIT_COLORS[Math.floor(Math.random() * HABIT_COLORS.length)],
         frequency: action.payload.frequency || 'daily',
         targetDays: action.payload.targetDays || [0, 1, 2, 3, 4, 5, 6],
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         archived: false
       }
       state.habits.push(newHabit)
@@ -147,6 +148,7 @@ const habitsSlice = createSlice({
       const habit = state.habits.find(h => h.id === action.payload)
       if (habit) {
         habit.archived = !habit.archived
+        habit.updatedAt = new Date().toISOString()
         saveToStorage(state)
       }
     },
@@ -157,13 +159,13 @@ const habitsSlice = createSlice({
       if (!state.completions[habitId]) {
         state.completions[habitId] = {}
       }
-      
+
       if (state.completions[habitId][date]) {
         delete state.completions[habitId][date]
       } else {
         state.completions[habitId][date] = true
       }
-      
+
       saveToStorage(state)
     },
 
@@ -173,6 +175,52 @@ const habitsSlice = createSlice({
       state.completions = {}
       saveToStorage(state)
     }
+  },
+
+  // ═══════════════════════════════════════════════
+  // ✅ Extra Reducers — برای Sync
+  // ═══════════════════════════════════════════════
+  extraReducers: (builder) => {
+    builder.addCase('sync/mergeHabits', (state, action) => {
+      const remoteItems = action.payload?.items || []
+
+      for (const remote of remoteItems) {
+        // ✅ حذف soft-deleted
+        if (remote.deletedAt || remote.deleted_at) {
+          state.habits = state.habits.filter(h => h.id !== remote.id)
+          delete state.completions[remote.id]
+          continue
+        }
+
+        const index = state.habits.findIndex(h => h.id === remote.id)
+
+        // ✅ جداسازی completions از habit
+        const { completions, ...habitData } = remote
+
+        if (index === -1) {
+          state.habits.push(habitData)
+          state.completions[habitData.id] = completions || {}
+        } else {
+          const local = state.habits[index]
+          const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime()
+          const remoteTime = new Date(remote.updatedAt || remote.createdAt || 0).getTime()
+
+          if (remoteTime > localTime) {
+            state.habits[index] = { ...local, ...habitData }
+          }
+
+          // ✅ completions رو union کن
+          if (completions) {
+            state.completions[habitData.id] = {
+              ...(state.completions[habitData.id] || {}),
+              ...completions
+            }
+          }
+        }
+      }
+
+      saveToStorage(state)
+    })
   }
 })
 
@@ -190,7 +238,7 @@ export const habitHelpers = {
   calculateStreak,
   calculateLongestStreak,
   HABIT_COLORS,
-  HABIT_ICON_OPTIONS // ✅ این هم تغییر کرد
+  HABIT_ICON_OPTIONS
 }
 
 export default habitsSlice.reducer
