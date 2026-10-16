@@ -1,0 +1,7 @@
+﻿const Database = require('better-sqlite3')
+const db = new Database('./data/smart-planner.db')
+const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all()
+console.log('📊 Tables in DB:')
+tables.forEach(t => console.log('  -', t.name))
+console.log('')
+console.log('Total:', tables.length, 'tables')

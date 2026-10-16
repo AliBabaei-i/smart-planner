@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     base: isMobile ? './' : '/',
     
     server: {
-      port: 5173,
+      port: 5173,strictPort: true,
       open: true,
       host: true,
       strictPort: false,
