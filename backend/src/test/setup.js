@@ -1,27 +1,10 @@
 // backend/src/test/setup.js
-import fs from 'fs'
-import path from 'path'
-import { beforeAll, afterAll } from 'vitest'
+// ✅ این فایل برای هر فایل تست اجرا می‌شه — فقط env رو چک می‌کنه
 
-// ✅ پاک کردن DB تست قبل از شروع
-const TEST_DB_PATH = path.resolve('./data/test.db')
+if (process.env.NODE_ENV !== 'test') {
+  console.warn('⚠️ NODE_ENV is not "test" — tests may fail')
+}
 
-beforeAll(() => {
-  const dataDir = path.dirname(TEST_DB_PATH)
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true })
-  }
-  if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH)
-  }
-  process.env.DB_PATH = TEST_DB_PATH
-  process.env.JWT_SECRET = 'test-secret-for-ci'
-  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-for-ci'
-  process.env.NODE_ENV = 'test'
-})
-
-afterAll(() => {
-  if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH)
-  }
-})
+if (!process.env.DB_PATH) {
+  console.warn('⚠️ DB_PATH is not set')
+}

@@ -6,25 +6,22 @@ import authRoutes from './routes/auth.routes.js'
 import syncRoutes from './routes/sync.routes.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 import marketRoutes from './routes/market.routes.js'
+
 // ═══════════════════════════════════════════════
 // ✅ Express App
 // ═══════════════════════════════════════════════
 const app = express()
 
-// ═══════════════════════════════════════════════
-// ✅ Trust proxy (برای deployment)
-// ═══════════════════════════════════════════════
 app.set('trust proxy', 1)
 app.use('/api/market', cors({ origin: true }), marketRoutes)
+
 // ═══════════════════════════════════════════════
-// ✅ CORS — هر پورت localhost توی dev + لیست مشخص توی prod
+// ✅ CORS
 // ═══════════════════════════════════════════════
 const corsOptions = {
   origin: (origin, callback) => {
-    // ✅ اگه origin نداره (مثل Postman/curl)، اجازه بده
     if (!origin) return callback(null, true)
 
-    // ✅ توی development: هر پورت localhost قبول
     if (config.env === 'development') {
       const localhostRegex = /^http:\/\/localhost:\d+$/
       const localhostIPRegex = /^http:\/\/127\.0\.0\.1:\d+$/
@@ -33,20 +30,13 @@ const corsOptions = {
       }
     }
 
-    // ✅ توی production: فقط originهای مجاز
     const allowedOrigins = (config.cors?.origin || '')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true)
-    }
-
-    // ✅ یا اگه allowedOrigins رشته باشه (نه آرایه)
-    if (config.cors?.origin === origin) {
-      return callback(null, true)
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    if (config.cors?.origin === origin) return callback(null, true)
 
     logger.warn(`🚫 CORS blocked: ${origin}`)
     callback(new Error(`CORS blocked for origin: ${origin}`))
@@ -55,12 +45,10 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
-  maxAge: 86400 // ۲۴ ساعت preflight cache
+  maxAge: 86400
 }
 
 app.use(cors(corsOptions))
-
-// ✅ پشتیبانی از preflight
 app.options('*', cors(corsOptions))
 
 // ═══════════════════════════════════════════════
@@ -70,7 +58,7 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // ═══════════════════════════════════════════════
-// ✅ Request Logger (dev only)
+// ✅ Request Logger (فقط development)
 // ═══════════════════════════════════════════════
 if (config.env === 'development') {
   app.use((req, res, next) => {
@@ -114,67 +102,57 @@ app.use('/api/auth', authRoutes)
 app.use('/api/sync', syncRoutes)
 
 // ═══════════════════════════════════════════════
-// ✅ 404 Handler
+// ✅ 404 + Error Handler
 // ═══════════════════════════════════════════════
 app.use(notFound)
-
-// ═══════════════════════════════════════════════
-// ✅ Error Handler (باید آخرین باشه)
-// ═══════════════════════════════════════════════
 app.use(errorHandler)
 
 // ═══════════════════════════════════════════════
-// ✅ Start Server
+// ✅ Start Server — فقط در غیر تست
+// (توی تست، supertest خودش app رو مدیریت می‌کنه)
 // ═══════════════════════════════════════════════
-const PORT = config.port || 4000
+if (config.env !== 'test') {
+  const PORT = config.port || 4000
 
-const server = app.listen(PORT, () => {
-  logger.success(`🚀 Server running on http://localhost:${PORT}`)
-  logger.info(`📦 Environment: ${config.env}`)
-  logger.info(`🌐 CORS origin: ${config.cors?.origin || 'default'}`)
-  logger.info('')
-  logger.info('📋 Available endpoints:')
-  logger.info(`   GET  http://localhost:${PORT}/api/health`)
-  logger.info(`   POST http://localhost:${PORT}/api/auth/signup`)
-  logger.info(`   POST http://localhost:${PORT}/api/auth/signin`)
-  logger.info(`   POST http://localhost:${PORT}/api/auth/refresh`)
-  logger.info(`   GET  http://localhost:${PORT}/api/auth/me`)
-  logger.info(`   POST http://localhost:${PORT}/api/sync/push`)
-  logger.info(`   GET  http://localhost:${PORT}/api/sync/pull`)
-  logger.info(`   POST http://localhost:${PORT}/api/sync/full`)
-  logger.info(`   DELETE http://localhost:${PORT}/api/sync/reset`)
-  logger.info('')
-})
-
-// ═══════════════════════════════════════════════
-// ✅ Graceful Shutdown
-// ═══════════════════════════════════════════════
-const shutdown = (signal) => {
-  logger.warn(`\n${signal} received — shutting down gracefully...`)
-
-  server.close(() => {
-    logger.info('✅ HTTP server closed')
-    process.exit(0)
+  const server = app.listen(PORT, () => {
+    logger.success(`🚀 Server running on http://localhost:${PORT}`)
+    logger.info(`📦 Environment: ${config.env}`)
+    logger.info(`🌐 CORS origin: ${config.cors?.origin || 'default'}`)
+    logger.info('')
+    logger.info('📋 Available endpoints:')
+    logger.info(`   GET  http://localhost:${PORT}/api/health`)
+    logger.info(`   POST http://localhost:${PORT}/api/auth/signup`)
+    logger.info(`   POST http://localhost:${PORT}/api/auth/signin`)
+    logger.info(`   POST http://localhost:${PORT}/api/auth/refresh`)
+    logger.info(`   GET  http://localhost:${PORT}/api/auth/me`)
+    logger.info(`   POST http://localhost:${PORT}/api/sync/push`)
+    logger.info(`   GET  http://localhost:${PORT}/api/sync/pull`)
+    logger.info(`   POST http://localhost:${PORT}/api/sync/full`)
+    logger.info(`   DELETE http://localhost:${PORT}/api/sync/reset`)
+    logger.info('')
   })
 
-  // ✅ اگه بعد از ۱۰s بسته نشد، زور ببند
-  setTimeout(() => {
-    logger.error('⚠️ Forced shutdown after timeout')
-    process.exit(1)
-  }, 10000)
+  const shutdown = (signal) => {
+    logger.warn(`\n${signal} received — shutting down gracefully...`)
+    server.close(() => {
+      logger.info('✅ HTTP server closed')
+      process.exit(0)
+    })
+    setTimeout(() => {
+      logger.error('⚠️ Forced shutdown after timeout')
+      process.exit(1)
+    }, 10000)
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT', () => shutdown('SIGINT'))
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  })
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error)
+    shutdown('uncaughtException')
+  })
 }
-
-process.on('SIGTERM', () => shutdown('SIGTERM'))
-process.on('SIGINT', () => shutdown('SIGINT'))
-
-// ✅ مدیریت خطاهای غیرمنتظره
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason)
-})
-
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error)
-  shutdown('uncaughtException')
-})
 
 export default app

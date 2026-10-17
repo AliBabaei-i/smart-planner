@@ -2,22 +2,10 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import request from 'supertest'
 import app from '../server.js'
-import { run } from '../db/index.js'
-import fs from 'fs'
-import path from 'path'
-
-beforeAll(async () => {
-  // ✅ اجرای schema روی DB تست
-  const schemaPath = path.resolve('./src/db/schema.sql')
-  const schema = fs.readFileSync(schemaPath, 'utf8')
-  // اینجا می‌تونیم از migrate استفاده کنیم
-  const { default: migrate } = await import('../db/migrate.js')
-  // migrate خودش schema رو اجرا می‌کنه
-})
 
 describe('Auth Flow', () => {
   const testUser = {
-    email: 'test@example.com',
+    email: `auth-${Date.now()}@example.com`,
     password: 'Test123456',
     name: 'Test User'
   }
