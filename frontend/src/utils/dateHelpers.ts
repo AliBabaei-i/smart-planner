@@ -1,9 +1,11 @@
 // ═══════════════════════════════════════════════
-// ✅ توابع کمکی مشترک برای کار با تاریخ
-// همه توابع از تاریخ محلی استفاده می‌کنن (نه UTC)
+// ✅ توابع کمکی برای کار با تاریخ
+// (همه توابع از تاریخ محلی استفاده می‌کنن، نه UTC)
 // ═══════════════════════════════════════════════
 
-export const getLocalDateStr = (date = new Date()) => {
+import type { DateStr } from '../types/common'
+
+export const getLocalDateStr = (date: Date | string | null | undefined = new Date()): string => {
   if (!date) return ''
   const d = date instanceof Date ? date : new Date(date)
   if (isNaN(d.getTime())) return ''
@@ -13,24 +15,24 @@ export const getLocalDateStr = (date = new Date()) => {
   return `${y}-${m}-${day}`
 }
 
-export const getTodayStr = () => getLocalDateStr(new Date())
+export const getTodayStr = (): string => getLocalDateStr(new Date())
 
-export const fromLocalDateStr = (str) => {
+export const fromLocalDateStr = (str: DateStr | null | undefined): Date | null => {
   if (!str) return null
   const [y, m, d] = str.split('-').map(Number)
   if (!y || !m || !d) return null
   return new Date(y, m - 1, d)
 }
 
-export const isSameDay = (d1, d2) => {
+export const isSameDay = (d1: Date | string | null | undefined, d2: Date | string | null | undefined): boolean => {
   if (!d1 || !d2) return false
   return new Date(d1).toDateString() === new Date(d2).toDateString()
 }
 
-export const isToday = (date) => isSameDay(date, new Date())
+export const isToday = (date: Date | string): boolean => isSameDay(date, new Date())
 
-export const getLast7Days = (fromDate = new Date()) => {
-  const days = []
+export const getLast7Days = (fromDate: Date = new Date()): Date[] => {
+  const days: Date[] = []
   for (let i = 6; i >= 0; i--) {
     const date = new Date(fromDate)
     date.setHours(12, 0, 0, 0)
@@ -40,28 +42,33 @@ export const getLast7Days = (fromDate = new Date()) => {
   return days
 }
 
-export const formatHour = (hour) => {
+export const formatHour = (hour: number | null | undefined): string => {
   if (hour === null || hour === undefined) return '--:--'
   return `${String(hour).padStart(2, '0')}:00`
 }
 
-export const addDays = (date, days) => {
+export const addDays = (date: Date, days: number): Date => {
   const result = new Date(date)
   result.setDate(result.getDate() + days)
   return result
 }
 
-export const addWeeks = (date, weeks) => addDays(date, weeks * 7)
+export const addWeeks = (date: Date, weeks: number): Date => addDays(date, weeks * 7)
 
-export const getHourOptions = (from = 0, to = 23) => {
-  const hours = []
+export interface HourOption {
+  value: number
+  label: string
+}
+
+export const getHourOptions = (from: number = 0, to: number = 23): HourOption[] => {
+  const hours: HourOption[] = []
   for (let h = from; h <= to; h++) {
     hours.push({ value: h, label: formatHour(h) })
   }
   return hours
 }
 
-export const safeParseDate = (dateInput) => {
+export const safeParseDate = (dateInput: Date | string | number | null | undefined): Date | null => {
   if (!dateInput) return null
   if (dateInput instanceof Date) return dateInput
 
@@ -76,20 +83,21 @@ export const safeParseDate = (dateInput) => {
   return new Date(dateInput)
 }
 
-export const formatRelativeTime = (dateInput) => {
+export const formatRelativeTime = (dateInput: Date | string | null | undefined): string => {
   try {
     if (!dateInput) return '---'
     const date = safeParseDate(dateInput)
     if (!date) return '---'
 
     const now = new Date()
-    const diffMs = now - date
+    const diffMs = now.getTime() - date.getTime()
     const diffSecs = Math.floor(diffMs / 1000)
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    const toPersianDigits = (str) => str.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])
+    const toPersianDigits = (str: string): string =>
+      str.toString().replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d, 10)])
 
     if (diffSecs < 60) return 'همین حالا'
     if (diffMins < 60) return toPersianDigits(`${diffMins} دقیقه پیش`)

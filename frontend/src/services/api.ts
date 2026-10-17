@@ -4,10 +4,8 @@
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
-// ═══════════════════════════════════════════════
 // ✅ Token Management
-// ═══════════════════════════════════════════════
-const getAccessToken = () => {
+const getAccessToken = (): string | null => {
   try {
     return localStorage.getItem('smart-planner-access-token')
   } catch {
@@ -15,7 +13,7 @@ const getAccessToken = () => {
   }
 }
 
-const setAccessToken = (token) => {
+const setAccessToken = (token: string | null): void => {
   try {
     if (token) {
       localStorage.setItem('smart-planner-access-token', token)
@@ -27,7 +25,7 @@ const setAccessToken = (token) => {
   }
 }
 
-const getRefreshToken = () => {
+const getRefreshToken = (): string | null => {
   try {
     return localStorage.getItem('smart-planner-refresh-token')
   } catch {
@@ -35,7 +33,7 @@ const getRefreshToken = () => {
   }
 }
 
-const setRefreshToken = (token) => {
+const setRefreshToken = (token: string | null): void => {
   try {
     if (token) {
       localStorage.setItem('smart-planner-refresh-token', token)
@@ -47,77 +45,72 @@ const setRefreshToken = (token) => {
   }
 }
 
-const clearTokens = () => {
+const clearTokens = (): void => {
   setAccessToken(null)
   setRefreshToken(null)
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Force logout — پاک کردن همه چیز و رفتن به login
-// ═══════════════════════════════════════════════
+// ✅ Force logout
 let isLoggingOut = false
 
-const forceLogout = (reason = 'Session expired') => {
+const forceLogout = (reason: string = 'Session expired'): void => {
   if (isLoggingOut) return
   isLoggingOut = true
 
   console.warn(`🚪 Force logout: ${reason}`)
 
   try {
-    // ✅ پاک کردن همه چیز
     localStorage.clear()
     sessionStorage.clear()
   } catch (e) {
     console.error('Logout cleanup error:', e)
   }
 
-  // ✅ ریدایرکت به login
   setTimeout(() => {
     window.location.href = '/login'
     window.location.reload()
   }, 100)
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Main Request Function
-// ═══════════════════════════════════════════════
-let isRefreshing = false
-let refreshPromise = null
+// ✅ Request Options (اضافه کردن _retry)
+export interface ApiRequestOptions extends RequestInit {
+  _retry?: boolean
+  body?: any
+}
 
-const request = async (endpoint, options = {}) => {
+// ✅ Main Request Function
+let isRefreshing = false
+let refreshPromise: Promise<string> | null = null
+
+const request = async <T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> => {
   const url = `${API_URL}${endpoint}`
   const accessToken = getAccessToken()
 
-  const config = {
+  const config: RequestInit = {
     method: options.method || 'GET',
     headers: {
       'Content-Type': 'application/json',
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers
-    },
-    ...(options.body && { body: JSON.stringify(options.body) })
+    } as HeadersInit,
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
   }
 
   try {
     const response = await fetch(url, config)
 
-    // ═════════════════════════════════════════
-    // ✅ 401 — تصمیم بر اساس کد خطا
-    // ═════════════════════════════════════════
+    // ✅ 401 handling
     if (response.status === 401 && !options._retry) {
-      // ✅ ۱. اول body رو بخون تا کد خطا رو ببینیم
-      let errorData = null
+      let errorData: any = null
       try {
         errorData = await response.clone().json()
-      } catch {}
+      } catch { /* silent */ }
 
-      // ✅ ۲. اگه SESSION_INVALIDATED بود → logout فوری (بدون تلاش refresh)
       if (errorData?.code === 'SESSION_INVALIDATED') {
         forceLogout('Session invalidated on another device')
         throw new Error('Session invalidated')
       }
 
-      // ✅ ۳. وگرنه، تلاش برای refresh
       const refreshToken = getRefreshToken()
 
       if (refreshToken && !isRefreshing) {
@@ -131,7 +124,7 @@ const request = async (endpoint, options = {}) => {
             if (refreshRes.ok) {
               const data = await refreshRes.json()
               setAccessToken(data.accessToken)
-              return data.accessToken
+              return data.accessToken as string
             }
             throw new Error('Refresh failed')
           })
@@ -142,7 +135,7 @@ const request = async (endpoint, options = {}) => {
 
         try {
           await refreshPromise
-          return request(endpoint, { ...options, _retry: true })
+          return request<T>(endpoint, { ...options, _retry: true })
         } catch {
           forceLogout('Refresh failed')
           throw new Error('Session expired. Please login again.')
@@ -150,37 +143,34 @@ const request = async (endpoint, options = {}) => {
       } else if (isRefreshing) {
         try {
           await refreshPromise
-          return request(endpoint, { ...options, _retry: true })
+          return request<T>(endpoint, { ...options, _retry: true })
         } catch {
           forceLogout('Refresh failed (queued)')
           throw new Error('Session expired. Please login again.')
         }
       } else {
-        // ✅ refresh token نداریم → logout
         forceLogout('No refresh token')
         throw new Error('Session expired. Please login again.')
       }
     }
 
-    // ✅ Parse response
     const contentType = response.headers.get('content-type')
-    const data = contentType?.includes('application/json')
+    const data: any = contentType?.includes('application/json')
       ? await response.json()
       : await response.text()
 
     if (!response.ok) {
-      const error = new Error(data?.message || data?.error || `HTTP ${response.status}`)
+      const error: any = new Error(data?.message || data?.error || `HTTP ${response.status}`)
       error.status = response.status
       error.data = data
       error.code = data?.code
       throw error
     }
 
-    return data
-  } catch (error) {
-    // ✅ Network error
+    return data as T
+  } catch (error: any) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      const netError = new Error('عدم اتصال به سرور')
+      const netError: any = new Error('عدم اتصال به سرور')
       netError.status = 0
       netError.isNetworkError = true
       throw netError
@@ -189,26 +179,23 @@ const request = async (endpoint, options = {}) => {
   }
 }
 
-// ═══════════════════════════════════════════════
 // ✅ API Client
-// ═══════════════════════════════════════════════
 export const api = {
-  get: (endpoint, options = {}) =>
-    request(endpoint, { ...options, method: 'GET' }),
+  get: <T = any>(endpoint: string, options: ApiRequestOptions = {}) =>
+    request<T>(endpoint, { ...options, method: 'GET' }),
 
-  post: (endpoint, body, options = {}) =>
-    request(endpoint, { ...options, method: 'POST', body }),
+  post: <T = any>(endpoint: string, body?: any, options: ApiRequestOptions = {}) =>
+    request<T>(endpoint, { ...options, method: 'POST', body }),
 
-  put: (endpoint, body, options = {}) =>
-    request(endpoint, { ...options, method: 'PUT', body }),
+  put: <T = any>(endpoint: string, body?: any, options: ApiRequestOptions = {}) =>
+    request<T>(endpoint, { ...options, method: 'PUT', body }),
 
-  patch: (endpoint, body, options = {}) =>
-    request(endpoint, { ...options, method: 'PATCH', body }),
+  patch: <T = any>(endpoint: string, body?: any, options: ApiRequestOptions = {}) =>
+    request<T>(endpoint, { ...options, method: 'PATCH', body }),
 
-  delete: (endpoint, options = {}) =>
-    request(endpoint, { ...options, method: 'DELETE' }),
+  delete: <T = any>(endpoint: string, options: ApiRequestOptions = {}) =>
+    request<T>(endpoint, { ...options, method: 'DELETE' }),
 
-  // ✅ Token management
   setAccessToken,
   setRefreshToken,
   getAccessToken,

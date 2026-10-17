@@ -1,14 +1,15 @@
+// frontend/src/features/finance/FinancePage.jsx
 import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import {
   FiDollarSign, FiPlus, FiPieChart, FiTrendingUp,
-  FiTrendingDown, FiFileText, FiSettings, FiCreditCard,
-  FiTarget, FiPercent
+  FiFileText, FiSettings, FiCreditCard,
+  FiTarget, FiPercent, FiBarChart2
 } from 'react-icons/fi'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
-
+import FinanceReports from './FinanceReports'
 import TransactionForm from './TransactionForm'
 import TransactionList from './TransactionList'
 import AccountForm from './AccountForm'
@@ -23,13 +24,16 @@ import FinanceDashboard from './FinanceDashboard'
 import FinanceImportExport from './FinanceImportExport'
 import { formatCompact } from './currencyHelpers'
 
+// ═══════════════════════════════════════════════
 // ✅ TABS با ترجمه — بدون hardcoded
+// ═══════════════════════════════════════════════
 const TAB_DEFINITIONS = [
   { id: 'dashboard', icon: FiPieChart, labelKey: 'finance.tabs.dashboard' },
   { id: 'transactions', icon: FiFileText, labelKey: 'finance.tabs.transactions' },
   { id: 'accounts', icon: FiCreditCard, labelKey: 'finance.tabs.accounts' },
   { id: 'budgets', icon: FiTarget, labelKey: 'finance.tabs.budgets' },
   { id: 'plans', icon: FiTrendingUp, labelKey: 'finance.tabs.plans' },
+  { id: 'reports', icon: FiBarChart2, labelKey: 'finance.tabs.reports' },
   { id: 'islamic', icon: FiPercent, labelKey: 'finance.tabs.islamic' },
   { id: 'settings', icon: FiSettings, labelKey: 'finance.tabs.settings' }
 ]
@@ -48,7 +52,9 @@ const FinancePage = memo(() => {
   const [showPlanForm, setShowPlanForm] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
 
+  // ─────────────────────────────────────────────
   // ✅ هندلرهای فرم — برای ویرایش
+  // ─────────────────────────────────────────────
   const handleOpenTransactionForm = useCallback((tx = null) => {
     setEditingItem(tx)
     setShowTransactionForm(true)
@@ -77,7 +83,9 @@ const FinancePage = memo(() => {
     setEditingItem(null)
   }, [])
 
+  // ─────────────────────────────────────────────
   // ✅ محاسبات برای tabs
+  // ─────────────────────────────────────────────
   const accountsById = useMemo(() => {
     const map = new Map()
     accounts.forEach(a => map.set(a.id, a))
@@ -269,6 +277,12 @@ const FinancePage = memo(() => {
         </Card>
       )}
 
+      {/* ═══════ گزارشات ═══════ */}
+      {/* ✅ بدون Card wrapper — FinanceReports خودش Card داره */}
+      {activeTab === 'reports' && (
+        <FinanceReports />
+      )}
+
       {/* اسلامی */}
       {activeTab === 'islamic' && <IslamicPanel />}
 
@@ -277,7 +291,7 @@ const FinancePage = memo(() => {
         <div className="space-y-5">
           <Card className="p-5">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-              {t('finance.categories.title')}
+              {t('finance.settings.categoriesTitle')}
             </h3>
             <CategoryManager />
           </Card>

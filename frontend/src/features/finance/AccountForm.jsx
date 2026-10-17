@@ -19,7 +19,7 @@ import {
   CURRENCIES
 } from './financeSlice'
 import { formatNumber } from './currencyHelpers'
-
+import CurrencyInput from './CurrencyInput'
 // ✅ رنگ‌های پیشنهادی برای حساب
 const COLOR_OPTIONS = [
   '#3b82f6', '#10b981', '#ef4444', '#f59e0b',
@@ -49,7 +49,7 @@ const AccountForm = memo(({ account = null, onClose }) => {
     name: account?.name || '',
     type: account?.type || 'bank',
     currency: account?.currency || 'IRR',
-    balance: account?.balance || 0,
+    balance: account?.balance ?? '', 
     color: account?.color || '#3b82f6'
   })
   const [loading, setLoading] = useState(false)
@@ -171,29 +171,20 @@ const AccountForm = memo(({ account = null, onClose }) => {
         </div>
 
         {/* موجودی اولیه */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {isPersian ? 'موجودی اولیه' : 'Initial Balance'}
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              value={formData.balance}
-              onChange={(e) => handleChange('balance', e.target.value)}
-              placeholder="0"
-              step="any"
-              className="w-full px-3 py-2 pe-16 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center"
-            />
-            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
-              {CURRENCIES[formData.currency]?.label || ''}
-            </span>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            {isPersian 
-              ? 'می‌تونی بعداً با ثبت تراکنش تغییرش بدی' 
-              : 'You can change this later with transactions'}
-          </p>
-        </div>
+<div>
+  <CurrencyInput
+    label={isPersian ? 'موجودی اولیه' : 'Initial Balance'}
+    value={formData.balance}
+    onChange={(e) => handleChange('balance', e.target.value)}
+    currency={formData.currency}
+    placeholder=""
+  />
+  <p className="text-xs text-gray-400 mt-1">
+    {isPersian 
+      ? 'می‌تونی بعداً با ثبت تراکنش تغییرش بدی' 
+      : 'You can change this later with transactions'}
+  </p>
+</div>
 
         {/* رنگ */}
         <div>

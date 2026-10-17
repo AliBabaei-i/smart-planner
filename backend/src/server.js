@@ -5,7 +5,7 @@ import logger from './utils/logger.js'
 import authRoutes from './routes/auth.routes.js'
 import syncRoutes from './routes/sync.routes.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
-
+import marketRoutes from './routes/market.routes.js'
 // ═══════════════════════════════════════════════
 // ✅ Express App
 // ═══════════════════════════════════════════════
@@ -15,7 +15,7 @@ const app = express()
 // ✅ Trust proxy (برای deployment)
 // ═══════════════════════════════════════════════
 app.set('trust proxy', 1)
-
+app.use('/api/market', cors({ origin: true }), marketRoutes)
 // ═══════════════════════════════════════════════
 // ✅ CORS — هر پورت localhost توی dev + لیست مشخص توی prod
 // ═══════════════════════════════════════════════

@@ -1,0 +1,14 @@
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./src/test/setup.js'],
+    coverage: {
+      reporter: ['text', 'html'],
+      include: ['src/**/*.js'],
+      exclude: ['src/test/**', 'src/db/migrate*.js']
+    }
+  }
+})

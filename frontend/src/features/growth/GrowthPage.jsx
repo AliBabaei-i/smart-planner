@@ -186,7 +186,7 @@ const GrowthPage = memo(() => {
       </div>
 
       {/* آمار کلی */}
-      <div className="P4 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 text-center">
           <div className="w-10 h-10 mx-auto bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center mb-2">
             <FiBookOpen size={20} className="text-purple-600 dark:text-purple-400" />
@@ -241,11 +241,10 @@ const GrowthPage = memo(() => {
         <div className="flex">
           <button
             onClick={switchToJournal}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'journal'
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'journal'
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
+              }`}
           >
             <FiBookOpen size={16} />
             <span>{t('growth.journal')}</span>
@@ -257,11 +256,10 @@ const GrowthPage = memo(() => {
           </button>
           <button
             onClick={switchToSkills}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'skills'
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'skills'
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
+              }`}
           >
             <FiAward size={16} />
             <span>{t('growth.skills')}</span>
@@ -373,22 +371,22 @@ const GrowthPage = memo(() => {
 
       {/* Modals */}
       <Modal
-  isOpen={showJournalForm}
-  onClose={handleJournalFormClose}
-  size="xlarge"       
-  title={editingJournal ? t('growth.form.editJournal') : t('growth.form.newJournal')}
->
-  <JournalForm journal={editingJournal} onClose={handleJournalFormClose} />
-</Modal>
+        isOpen={showJournalForm}
+        onClose={handleJournalFormClose}
+        size="xlarge"
+        title={editingJournal ? t('growth.form.editJournal') : t('growth.form.newJournal')}
+      >
+        <JournalForm journal={editingJournal} onClose={handleJournalFormClose} />
+      </Modal>
 
       <Modal
-  isOpen={showSkillForm}
-  onClose={handleSkillFormClose}
-  size="xlarge"      
-  title={editingSkill ? t('growth.form.editSkill') : t('growth.form.newSkill')}
->
-  <SkillForm skill={editingSkill} onClose={handleSkillFormClose} />
-</Modal>
+        isOpen={showSkillForm}
+        onClose={handleSkillFormClose}
+        size="xlarge"
+        title={editingSkill ? t('growth.form.editSkill') : t('growth.form.newSkill')}
+      >
+        <SkillForm skill={editingSkill} onClose={handleSkillFormClose} />
+      </Modal>
 
       <ConfirmDialog
         isOpen={journalDelete.isOpen}

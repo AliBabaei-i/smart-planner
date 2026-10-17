@@ -1,42 +1,19 @@
-import React, { useState, useCallback, memo } from 'react'
+import React, { useState, useCallback, useEffect, memo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import {
-  FiSettings, FiSave, FiRefreshCw
+  FiSettings, FiSave, FiRefreshCw, FiDownloadCloud,
+  FiTrendingUp, FiDollarSign
 } from 'react-icons/fi'
 import Card from '../../../components/ui/Card'
 import Button from '../../../components/ui/Button'
 import DatePicker from '../../../components/ui/DatePicker'
 import CurrencyInput from '../CurrencyInput'
 import FiqhNote from './FiqhNote'
-import { updateIslamicSettings } from '../financeSlice'
-import { formatNumber, parseFormattedNumber } from '../currencyHelpers'
-
-// ✅ API قیمت طلا (بدون API Key)
-const fetchGoldPrice = async () => {
-  try {
-    const response = await fetch('https://api.gold-api.com/price/XAU')
-    if (!response.ok) throw new Error('Failed to fetch gold price')
-    const data = await response.json()
-    return data.price / 31.1034768 // تبدیل اونس به گرم
-  } catch (error) {
-    console.error('Gold price fetch error:', error)
-    return null
-  }
-}
-
-const fetchSilverPrice = async () => {
-  try {
-    const response = await fetch('https://api.gold-api.com/price/XAG')
-    if (!response.ok) throw new Error('Failed to fetch silver price')
-    const data = await response.json()
-    return data.price / 31.1034768
-  } catch (error) {
-    console.error('Silver price fetch error:', error)
-    return null
-  }
-}
+import { updateIslamicSettings, updateCurrencyRates } from '../financeSlice'
+import { formatNumber } from '../currencyHelpers'
+import { marketApi } from '../../../services/marketApi'
 
 const IslamicSettingsTab = memo(() => {
   const { i18n } = useTranslation()
@@ -45,71 +22,75 @@ const IslamicSettingsTab = memo(() => {
 
   const finance = useSelector(state => state.finance || {})
   const settings = finance.islamicSettings || {}
-  const currencySettings = finance.currencySettings || {}
 
   const [localSettings, setLocalSettings] = useState({
     khumsYearStart: settings.khumsYearStart || '',
-    goldPricePerGram: settings.goldPricePerGram || 5000000,
-    silverPricePerGram: settings.silverPricePerGram || 80000,
+    goldPricePerGram: settings.goldPricePerGram || 0,
+    silverPricePerGram: settings.silverPricePerGram || 0,
     showKhumsWidget: settings.showKhumsWidget !== false,
     showZakatWidget: settings.showZakatWidget !== false,
     warnOnInterest: settings.warnOnInterest !== false
   })
 
-  const [fetchingGold, setFetchingGold] = useState(false)
-  const [fetchingSilver, setFetchingSilver] = useState(false)
+  const [liveUsd, setLiveUsd] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [autoFetched, setAutoFetched] = useState(false)
+  const [fetchError, setFetchError] = useState(null)
 
   const handleChange = useCallback((field, value) => {
     setLocalSettings(prev => ({ ...prev, [field]: value }))
   }, [])
 
-  const handleFetchGoldPrice = useCallback(async () => {
-    setFetchingGold(true)
+  const loadPrices = useCallback(async (forceRefresh = false) => {
+    setLoading(true)
+    setFetchError(null)
     try {
-      const priceUSD = await fetchGoldPrice()
-      if (priceUSD) {
-        const usdRate = currencySettings.rates?.USD || 600000
-        const priceIRR = Math.round(priceUSD * usdRate)
-        handleChange('goldPricePerGram', priceIRR)
-        toast.success(
-          isPersian
-            ? `قیمت طلا: ${formatNumber(priceIRR, true)} ریال/گرم`
-            : `Gold: $${priceUSD.toFixed(2)}/g → ${formatNumber(priceIRR, true)} IRR/g`,
-          { position: 'bottom-left', autoClose: 4000 }
-        )
-      } else {
-        toast.error(isPersian ? 'خطا در دریافت قیمت' : 'Failed to fetch price', {
-          position: 'bottom-left', autoClose: 3000
-        })
-      }
-    } finally {
-      setFetchingGold(false)
-    }
-  }, [currencySettings.rates, isPersian, handleChange])
+      const data = forceRefresh
+        ? await marketApi.refresh()
+        : await marketApi.getPrices()
 
-  const handleFetchSilverPrice = useCallback(async () => {
-    setFetchingSilver(true)
-    try {
-      const priceUSD = await fetchSilverPrice()
-      if (priceUSD) {
-        const usdRate = currencySettings.rates?.USD || 600000
-        const priceIRR = Math.round(priceUSD * usdRate)
-        handleChange('silverPricePerGram', priceIRR)
-        toast.success(
-          isPersian
-            ? `قیمت نقره: ${formatNumber(priceIRR, true)} ریال/گرم`
-            : `Silver: $${priceUSD.toFixed(2)}/g`,
-          { position: 'bottom-left', autoClose: 4000 }
-        )
-      } else {
-        toast.error(isPersian ? 'خطا در دریافت قیمت' : 'Failed to fetch price', {
-          position: 'bottom-left', autoClose: 3000
-        })
-      }
+      setLiveUsd(data.usdRial)
+
+      setLocalSettings(prev => ({
+        ...prev,
+        goldPricePerGram: data.gold18kRial,
+        silverPricePerGram: data.silverRial
+      }))
+
+      // ✅ به‌روزرسانی نرخ دلار در تنظیمات ارز
+      dispatch(updateCurrencyRates({ USD: data.usdRial }))
+
+      setAutoFetched(true)
+      return true
+    } catch (error) {
+      console.error('Market fetch failed:', error)
+      setFetchError(error.message)
+      setAutoFetched(true)
+      return false
     } finally {
-      setFetchingSilver(false)
+      setLoading(false)
     }
-  }, [currencySettings.rates, isPersian, handleChange])
+  }, [dispatch])
+
+  // ✅ Auto-fetch روی mount
+  useEffect(() => {
+    loadPrices(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleManualRefresh = useCallback(async () => {
+    const ok = await loadPrices(true)
+    if (ok) {
+      toast.success(isPersian ? 'قیمت‌ها به‌روز شد' : 'Prices updated', {
+        position: 'bottom-left', autoClose: 2500
+      })
+    } else {
+      toast.error(
+        isPersian ? 'خطا در دریافت قیمت — از سرور' : 'Server fetch failed',
+        { position: 'bottom-left', autoClose: 3000 }
+      )
+    }
+  }, [loadPrices, isPersian])
 
   const handleSave = useCallback(() => {
     dispatch(updateIslamicSettings(localSettings))
@@ -120,21 +101,26 @@ const IslamicSettingsTab = memo(() => {
 
   return (
     <div className="space-y-5">
-      <div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <FiSettings className="text-gray-600" size={20} />
           <span>{isPersian ? 'تنظیمات محاسبات اسلامی' : 'Islamic Settings'}</span>
         </h3>
+        <Button onClick={handleManualRefresh} loading={loading} size="small" variant="secondary">
+          <FiRefreshCw size={12} />
+          <span>{isPersian ? 'به‌روزرسانی' : 'Refresh'}</span>
+        </Button>
       </div>
 
+      {/* سال خمسی */}
       <Card className="p-5 space-y-4">
         <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
           {isPersian ? 'سال خمسی' : 'Khums Year'}
         </h4>
         <FiqhNote>
           {isPersian
-            ? 'سال خمسی از تاریخی شروع می‌شه که اولین درآمد پایدارت رو داشتی. مثلاً اگه اولین حقوقت رو اول فروردین گرفتی، سال خمسی‌ات از همون تاریخ شروع می‌شه.'
-            : 'The Khums year starts from when you had your first stable income.'}
+            ? 'سال خمسی از تاریخی شروع می‌شه که اولین درآمد پایدارت رو داشتی.'
+            : 'The Khums year starts from your first stable income.'}
         </FiqhNote>
         <DatePicker
           label={isPersian ? 'تاریخ شروع سال خمسی' : 'Khums Year Start'}
@@ -144,84 +130,89 @@ const IslamicSettingsTab = memo(() => {
         />
       </Card>
 
+      {/* نرخ طلا و نقره */}
       <Card className="p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-            {isPersian ? 'نرخ طلا و نقره' : 'Gold & Silver Prices'}
-          </h4>
-          <div className="flex gap-2">
-            <Button onClick={handleFetchGoldPrice} loading={fetchingGold} size="small" variant="secondary">
-              <FiRefreshCw size={12} />
-              <span>{isPersian ? 'قیمت طلا' : 'Gold'}</span>
-            </Button>
-            <Button onClick={handleFetchSilverPrice} loading={fetchingSilver} size="small" variant="secondary">
-              <FiRefreshCw size={12} />
-              <span>{isPersian ? 'قیمت نقره' : 'Silver'}</span>
-            </Button>
-          </div>
-        </div>
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <FiTrendingUp size={14} className="text-amber-600" />
+          {isPersian ? 'نرخ طلا و نقره (بازار ایران)' : 'Gold & Silver (Iran Market)'}
+        </h4>
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {isPersian
-            ? 'نرخ لحظه‌ای از بازار جهانی دریافت می‌شه و با نرخ دلار شما تبدیل می‌شه. می‌تونی دستی هم وارد کنی.'
-            : 'Live rates from global market, converted with your USD rate.'}
+            ? 'قیمت‌ها از TGJU (بازار ایران) از طریق سرور شما دریافت می‌شن. قابل ویرایش دستی هم هستن.'
+            : 'Prices fetched from TGJU via your server. Manually editable too.'}
         </p>
 
+        {autoFetched && !fetchError && liveUsd && (
+          <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-xs text-emerald-700 dark:text-emerald-300">
+            <FiDownloadCloud size={14} />
+            <span>
+              {isPersian
+                ? `قیمت‌های لحظه‌ای لود شد`
+                : `Live prices loaded`}
+            </span>
+          </div>
+        )}
+
+        {autoFetched && fetchError && (
+          <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-xs text-amber-700 dark:text-amber-300">
+            <span>
+              {isPersian
+                ? `دریافت خودکار ناموفق (${fetchError}). مقادیر دستی زیر استفاده می‌شن.`
+                : `Auto-fetch failed (${fetchError}). Manual values used.`}
+            </span>
+          </div>
+        )}
+
         <CurrencyInput
-          label={isPersian ? 'قیمت هر گرم طلا (ریال)' : 'Gold Price per gram (IRR)'}
+          label={isPersian ? 'قیمت هر گرم طلا (ریال)' : 'Gold Price/g (IRR)'}
           value={localSettings.goldPricePerGram}
           onChange={(e) => handleChange('goldPricePerGram', e.target.value)}
           currency="IRR"
         />
 
         <CurrencyInput
-          label={isPersian ? 'قیمت هر گرم نقره (ریال)' : 'Silver Price per gram (IRR)'}
+          label={isPersian ? 'قیمت هر گرم نقره (ریال)' : 'Silver Price/g (IRR)'}
           value={localSettings.silverPricePerGram}
           onChange={(e) => handleChange('silverPricePerGram', e.target.value)}
           currency="IRR"
         />
+
+        {liveUsd && (
+          <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg text-xs text-gray-600 dark:text-gray-400">
+            <FiDollarSign size={12} />
+            <span>
+              {isPersian
+                ? `دلار بازار آزاد: ${formatNumber(liveUsd, true)} ریال`
+                : `USD: ${formatNumber(liveUsd, false)} IRR`}
+            </span>
+          </div>
+        )}
       </Card>
 
+      {/* گزینه‌های نمایش */}
       <Card className="p-5 space-y-3">
         <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
           {isPersian ? 'گزینه‌های نمایش' : 'Display Options'}
         </h4>
 
-        <label className="flex items-center justify-between py-2 cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {isPersian ? 'نمایش ویجت خمس در داشبورد' : 'Show Khums widget'}
-          </span>
-          <input
-            type="checkbox"
-            checked={localSettings.showKhumsWidget}
-            onChange={(e) => handleChange('showKhumsWidget', e.target.checked)}
-            className="w-4 h-4 rounded text-emerald-600"
-          />
-        </label>
-
-        <label className="flex items-center justify-between py-2 cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {isPersian ? 'نمایش ویجت زکات در داشبورد' : 'Show Zakat widget'}
-          </span>
-          <input
-            type="checkbox"
-            checked={localSettings.showZakatWidget}
-            onChange={(e) => handleChange('showZakatWidget', e.target.checked)}
-            className="w-4 h-4 rounded text-emerald-600"
-          />
-        </label>
-
-        <label className="flex items-center justify-between py-2 cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {isPersian ? 'هشدار ربا در ثبت تراکنش' : 'Interest (Riba) warning'}
-          </span>
-          <input
-            type="checkbox"
-            checked={localSettings.warnOnInterest}
-            onChange={(e) => handleChange('warnOnInterest', e.target.checked)}
-            className="w-4 h-4 rounded text-emerald-600"
-          />
-        </label>
+        {[
+          { key: 'showKhumsWidget', labelFa: 'نمایش ویجت خمس در داشبورد', labelEn: 'Show Khums widget' },
+          { key: 'showZakatWidget', labelFa: 'نمایش ویجت زکات در داشبورد', labelEn: 'Show Zakat widget' },
+          { key: 'warnOnInterest', labelFa: 'هشدار ربا در ثبت تراکنش', labelEn: 'Interest (Riba) warning' }
+        ].map(opt => (
+          <label key={opt.key} className="flex items-center justify-between py-2 cursor-pointer">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {isPersian ? opt.labelFa : opt.labelEn}
+            </span>
+            <input
+              type="checkbox"
+              checked={localSettings[opt.key]}
+              onChange={(e) => handleChange(opt.key, e.target.checked)}
+              className="w-4 h-4 rounded text-emerald-600"
+            />
+          </label>
+        ))}
       </Card>
 
       <div className="flex justify-end">

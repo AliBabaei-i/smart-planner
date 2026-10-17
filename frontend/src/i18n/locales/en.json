@@ -475,12 +475,85 @@
     "finance": {
         "title": "Finance",
         "subtitle": "Manage income, expenses, budgets and Islamic calculations",
+        "reports": {
+      "title": "Financial Reports",
+      "subtitle": "Analyze income and expenses over time",
+      "filters": {
+        "title": "Filters",
+        "reset": "Clear",
+        "presetLabel": "Date Range",
+        "fromDate": "From Date",
+        "toDate": "To Date",
+        "type": "Type",
+        "account": "Account",
+        "allAccounts": "All Accounts",
+        "category": "Category",
+        "allCategories": "All Categories",
+        "presets": {
+          "today": "Today",
+          "thisWeek": "This Week",
+          "thisMonth": "This Month",
+          "lastMonth": "Last Month",
+          "last3Months": "Last 3 Months",
+          "thisYear": "This Year",
+          "custom": "Custom"
+        },
+        "types": {
+          "all": "All",
+          "income": "Income",
+          "expense": "Expense",
+          "transfer": "Transfer"
+        }
+      },
+      "summary": {
+        "totalIncome": "Total Income",
+        "totalExpense": "Total Expense",
+        "net": "Net",
+        "count": "Transactions"
+      },
+      "categoryChart": {
+        "title": "Category Distribution",
+        "income": "Income",
+        "expense": "Expense",
+        "others": "Others",
+        "empty": "No transactions in this range"
+      },
+      "timelineChart": {
+        "title": "Timeline",
+        "income": "Income",
+        "expense": "Expense",
+        "daily": "Daily",
+        "monthly": "Monthly",
+        "empty": "No data to display"
+      },
+      "table": {
+        "title": "Transactions",
+        "date": "Date",
+        "description": "Description",
+        "category": "Category",
+        "account": "Account",
+        "amount": "Amount",
+        "noDescription": "No description",
+        "empty": "No transactions found"
+      },
+      "export": {
+        "button": "Export",
+        "csv": "📄 Excel / CSV",
+        "json": "🔧 JSON",
+        "empty": "No transactions to export",
+        "success": "File downloaded successfully"
+      }
+    },
+    "settings": {
+      "categoriesTitle": "Category Management"
+    },
         "tabs": {
             "dashboard": "Dashboard",
             "transactions": "Transactions",
             "accounts": "Accounts",
             "budgets": "Budgets",
             "plans": "Loans & Debts",
+            "reports": "Reports",
             "islamic": "Islamic",
             "settings": "Settings"
         },

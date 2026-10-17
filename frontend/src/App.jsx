@@ -1,8 +1,8 @@
 import React, { useEffect, useState, Suspense, lazy, useRef } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import { Provider, useDispatch, useSelector } from 'react-redux'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import { ToastContainer } from 'react-toastify'
-import store from './app/store'
+
 import AppLayout from './components/layout/AppLayout'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -12,6 +12,7 @@ import FloatingQuickAdd from './components/ui/FloatingQuickAdd'
 import LoadingSpinner from './components/common/LoadingSpinner'
 import PomodoroWidget from './features/pomodoro/PomodoroWidget'
 import AchievementNotification from './features/achievements/AchievementNotification'
+
 import { reminderService } from './services/reminderService'
 import { syncService } from './services/syncService'
 import { generateRecurringTasks } from './features/tasks/tasksSlice'
@@ -79,28 +80,22 @@ function AppContent() {
   const [showSearch, setShowSearch] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
 
-  // ✅ Refs
   const themeInitRef = useRef(false)
   const reminderInitRef = useRef(false)
   const recurringInitRef = useRef(false)
   const authInitRef = useRef(false)
   const syncInitRef = useRef(false)
 
-  // ✅ Auth state
   const isAuthenticated = useSelector(selectIsAuthenticated)
 
-  // ═══════════════════════════════════════════════
-  // ✅ 1. Initialize Theme
-  // ═══════════════════════════════════════════════
+  // 1. Theme
   useEffect(() => {
     if (themeInitRef.current) return
     themeInitRef.current = true
     initializeTheme()
   }, [])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 2. Start Reminder Service
-  // ═══════════════════════════════════════════════
+  // 2. Reminder
   useEffect(() => {
     if (reminderInitRef.current) return
     if (reminderService.started) {
@@ -115,83 +110,68 @@ function AppContent() {
     }
   }, [])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 3. Generate Recurring Tasks
-  // ═══════════════════════════════════════════════
+  // 3. Recurring tasks
   useEffect(() => {
     if (recurringInitRef.current) return
     recurringInitRef.current = true
-
     dispatch(generateRecurringTasks())
-
     const interval = setInterval(() => {
       dispatch(generateRecurringTasks())
     }, 60 * 60 * 1000)
-
     return () => clearInterval(interval)
   }, [dispatch])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 4. Check Auth (یک بار)
-  // ═══════════════════════════════════════════════
+  // 4. Check Auth
   useEffect(() => {
     if (authInitRef.current) return
     authInitRef.current = true
     dispatch(checkAuth())
   }, [dispatch])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 5. Sync — Subscribe به events
-  // ═══════════════════════════════════════════════
+  // 5. Sync events
   useEffect(() => {
-    const unsubscribe = syncService.subscribe((event) => {
+    const unsubscribe = syncService.subscribe(async (event) => {
       if (event.status === 'syncing') {
         dispatch(setSyncing())
-        dispatch(setQueueSize(syncQueue.size()))
+        const size = await syncQueue.size()
+        dispatch(setQueueSize(size))
       } else if (event.status === 'synced') {
-        dispatch(setSynced(event.timestamp))
+        const ts = event.timestamp instanceof Date
+          ? event.timestamp.toISOString()
+          : event.timestamp
+        dispatch(setSynced(ts))
         dispatch(setQueueSize(0))
       } else if (event.status === 'error') {
         dispatch(setSyncError(event.error))
       }
     })
-
     return unsubscribe
   }, [dispatch])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 6. Sync — Start/Stop based on auth
-  // ═══════════════════════════════════════════════
+  // 6. Sync start/stop
   useEffect(() => {
     if (isAuthenticated) {
-      // ✅ صبر کن تا state کامل rehydrate بشه
       const timer = setTimeout(() => {
         if (!syncInitRef.current) {
           syncInitRef.current = true
           syncService.start()
         }
       }, 2000)
-
       return () => clearTimeout(timer)
     } else {
-      // ✅ Logout → stop sync
       syncService.stop()
       syncInitRef.current = false
     }
   }, [isAuthenticated])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 7. Track Tasks Page Views
-  // ═══════════════════════════════════════════════
+  // 7. Track tasks page
   useEffect(() => {
     if (location.pathname === '/tasks') {
       localStorage.setItem('smart-planner-tasks-viewed-at', new Date().toISOString())
     }
   }, [location.pathname])
 
-  // ═══════════════════════════════════════════════
-  // ✅ 8. Keyboard Shortcuts
-  // ═══════════════════════════════════════════════
+  // 8. Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       const target = e.target
@@ -223,19 +203,12 @@ function AppContent() {
         return
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // ═══════════════════════════════════════════════
-  // ✅ Render
-  // ═══════════════════════════════════════════════
   return (
     <React.Fragment>
-      {/* ═══════════════════════════════════════ */}
-      {/* Routes */}
-      {/* ═══════════════════════════════════════ */}
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -244,10 +217,8 @@ function AppContent() {
         }
       >
         <Routes>
-          {/* ⭐ Login (Public) */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* ⭐ Protected Routes */}
           <Route
             path="/*"
             element={
@@ -286,9 +257,6 @@ function AppContent() {
         </Routes>
       </Suspense>
 
-      {/* ═══════════════════════════════════════ */}
-      {/* Global Components — فقط بعد از auth */}
-      {/* ═══════════════════════════════════════ */}
       {isAuthenticated && (
         <>
           <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
@@ -299,7 +267,6 @@ function AppContent() {
         </>
       )}
 
-      {/* ✅ OfflineIndicator و Toast همیشه */}
       <OfflineIndicator />
       <ToastContainer
         position="bottom-left"
@@ -319,16 +286,12 @@ function AppContent() {
 }
 
 // ═══════════════════════════════════════════════
-// ✅ App
+// ✅ App — فقط محتوا (Provider/Router توی main.jsx)
 // ═══════════════════════════════════════════════
 function App() {
   return (
     <ErrorBoundary>
-      <Provider store={store}>
-        <Router>
-          <AppContent />
-        </Router>
-      </Provider>
+      <AppContent />
     </ErrorBoundary>
   )
 }
