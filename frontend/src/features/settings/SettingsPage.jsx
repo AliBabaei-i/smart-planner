@@ -269,41 +269,41 @@ const SettingsPage = () => {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-              <FiInfo size={20} className="text-blue-600" />
-              <span>{t('settings.about.title')}</span>
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.version')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">2.0.0</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.developer')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">{t('settings.about.developerName')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.tech')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">React + Redux</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.storage')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Local Storage</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.support')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">PWA + Offline</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.theme')}:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Light / Dark</span>
-                </div>
-              </div>
-            </div>
-          </Card>
+  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+    <FiInfo size={20} className="text-blue-600" />
+    <span>{t('settings.about.title')}</span>
+  </h3>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.version')}:</span>
+        <span className="font-medium text-gray-900 dark:text-white text-sm">2.1.0 (TypeScript)</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.developer')}:</span>
+        <span className="font-medium text-gray-900 dark:text-white text-sm">{t('settings.about.developerName')}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.tech')}:</span>
+        <span className="font-medium text-gray-900 dark:text-white text-sm">React 18 + Redux + Vite</span>
+      </div>
+    </div>
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.storage')}:</span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400 text-sm">IndexedDB (Offline-First)</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.support')}:</span>
+        <span className="font-medium text-gray-900 dark:text-white text-sm">PWA + Multi-Device Sync</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400 text-sm">{t('settings.about.theme')}:</span>
+        <span className="font-medium text-gray-900 dark:text-white text-sm">Light / Dark / System</span>
+      </div>
+    </div>
+  </div>
+</Card>
 
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">

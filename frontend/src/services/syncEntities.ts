@@ -1,9 +1,15 @@
 // ═══════════════════════════════════════════════
 // ✅ Sync Entities Mapping
-// نگاشت بین Redux slices و Backend entities
 // ═══════════════════════════════════════════════
 
-export const ENTITY_MAP = {
+export interface EntityConfig {
+  sliceName: string
+  backendName: string
+  statePath: string[]
+  fields: string[]
+}
+
+export const ENTITY_MAP: Record<string, EntityConfig> = {
   tasks: {
     sliceName: 'tasks',
     backendName: 'tasks',
@@ -16,7 +22,6 @@ export const ENTITY_MAP = {
       'financialTransactionId', 'createdAt', 'updatedAt'
     ]
   },
-
   projects: {
     sliceName: 'projects',
     backendName: 'projects',
@@ -26,7 +31,6 @@ export const ENTITY_MAP = {
       'budgetPeriod', 'createdAt', 'updatedAt'
     ]
   },
-
   habits: {
     sliceName: 'habits',
     backendName: 'habits',
@@ -36,7 +40,6 @@ export const ENTITY_MAP = {
       'completions', 'createdAt', 'updatedAt'
     ]
   },
-
   notes: {
     sliceName: 'notes',
     backendName: 'notes',
@@ -46,7 +49,6 @@ export const ENTITY_MAP = {
       'tags', 'checklist', 'createdAt', 'updatedAt'
     ]
   },
-
   goals: {
     sliceName: 'goals',
     backendName: 'goals',
@@ -57,7 +59,6 @@ export const ENTITY_MAP = {
       'createdAt', 'updatedAt'
     ]
   },
-
   journals: {
     sliceName: 'growth',
     backendName: 'journals',
@@ -67,7 +68,6 @@ export const ENTITY_MAP = {
       'reflection', 'gratitude', 'createdAt', 'updatedAt'
     ]
   },
-
   skills: {
     sliceName: 'growth',
     backendName: 'skills',
@@ -77,7 +77,6 @@ export const ENTITY_MAP = {
       'color', 'hours', 'sessions', 'createdAt', 'updatedAt'
     ]
   },
-
   financeAccounts: {
     sliceName: 'finance',
     backendName: 'financeAccounts',
@@ -87,7 +86,6 @@ export const ENTITY_MAP = {
       'createdAt', 'updatedAt'
     ]
   },
-
   financeTransactions: {
     sliceName: 'finance',
     backendName: 'financeTransactions',
@@ -99,7 +97,6 @@ export const ENTITY_MAP = {
       'projectId', 'planId', 'createdAt', 'updatedAt'
     ]
   },
-
   financePlans: {
     sliceName: 'finance',
     backendName: 'financePlans',
@@ -111,7 +108,6 @@ export const ENTITY_MAP = {
       'counterparty', 'isActive', 'createdAt', 'updatedAt'
     ]
   },
-
   financePlanDues: {
     sliceName: 'finance',
     backendName: 'financePlanDues',
@@ -121,7 +117,6 @@ export const ENTITY_MAP = {
       'transactionId', 'notes', 'createdAt', 'updatedAt'
     ]
   },
-
   financeBudgets: {
     sliceName: 'finance',
     backendName: 'financeBudgets',
@@ -134,10 +129,7 @@ export const ENTITY_MAP = {
   }
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Helper: پیدا کردن entity از Redux action
-// ═══════════════════════════════════════════════
-export function getEntityFromAction(actionType) {
+export function getEntityFromAction(actionType: string): string | null {
   if (!actionType || typeof actionType !== 'string') return null
 
   const [sliceName] = actionType.split('/')
@@ -168,10 +160,7 @@ export function getEntityFromAction(actionType) {
   return null
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Helper: استخراج entities از state
-// ═══════════════════════════════════════════════
-export function getEntitiesFromState(state, entityName) {
+export function getEntitiesFromState(state: any, entityName: string): any[] {
   const config = ENTITY_MAP[entityName]
   if (!config) return []
 
@@ -184,5 +173,4 @@ export function getEntitiesFromState(state, entityName) {
   return Array.isArray(current) ? current : []
 }
 
-// ✅ Default export
 export default ENTITY_MAP

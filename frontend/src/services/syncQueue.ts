@@ -1,18 +1,11 @@
-import { queueDB } from './queueDB'
+import { queueDB, type QueueChange } from './queueDB'
 
-// ═══════════════════════════════════════════════
-// ✅ Constants
-// ═══════════════════════════════════════════════
 const LAST_SYNC_KEY = 'smart-planner-last-sync'
 const OLD_QUEUE_KEY = 'smart-planner-sync-queue'
 const MAX_QUEUE_SIZE = 5000
 
-// ═══════════════════════════════════════════════
-// ✅ Sync Queue — IndexedDB-backed
-// ═══════════════════════════════════════════════
 export const syncQueue = {
-  // ✅ همه تغییرات (مرتب‌شده بر اساس زمان)
-  async getAll() {
+  async getAll(): Promise<QueueChange[]> {
     try {
       return await queueDB.changes.orderBy('queuedAt').toArray()
     } catch (error) {
@@ -21,8 +14,7 @@ export const syncQueue = {
     }
   },
 
-  // ✅ اضافه کردن تغییر (با dedup)
-  async add(change) {
+  async add(change: Omit<QueueChange, 'id' | 'entityId' | 'queuedAt'>): Promise<void> {
     try {
       const entity = change.entity
       const entityId = change.data?.id
@@ -32,7 +24,6 @@ export const syncQueue = {
         return
       }
 
-      // ✅ چک کن قبلاً بود؟
       const existing = await queueDB.changes
         .where('[entity+entityId]')
         .equals([entity, entityId])
@@ -47,21 +38,16 @@ export const syncQueue = {
       }
 
       if (existing) {
-        // ✅ جایگزین کن (آخرین نسخه برنده)
-        await queueDB.changes.update(existing.id, item)
+        await queueDB.changes.update(existing.id!, item)
       } else {
         await queueDB.changes.add(item)
       }
 
-      // ✅ Trim اگر از سقف رد شد
       const count = await queueDB.changes.count()
       if (count > MAX_QUEUE_SIZE) {
         const excess = count - MAX_QUEUE_SIZE
-        const oldest = await queueDB.changes
-          .orderBy('queuedAt')
-          .limit(excess)
-          .toArray()
-        const ids = oldest.map(o => o.id)
+        const oldest = await queueDB.changes.orderBy('queuedAt').limit(excess).toArray()
+        const ids = oldest.map(o => o.id!)
         await queueDB.changes.bulkDelete(ids)
         console.warn(`⚠️ Trimmed ${excess} old queue items`)
       }
@@ -70,16 +56,14 @@ export const syncQueue = {
     }
   },
 
-  // ✅ اضافه کردن چند تغییر
-  async addMany(changes) {
+  async addMany(changes: any[]): Promise<void> {
     if (!changes || changes.length === 0) return
     for (const change of changes) {
       await this.add(change)
     }
   },
 
-  // ✅ پاک کردن همه
-  async clear() {
+  async clear(): Promise<void> {
     try {
       await queueDB.changes.clear()
     } catch (error) {
@@ -87,8 +71,7 @@ export const syncQueue = {
     }
   },
 
-  // ✅ حذف بر اساس ID
-  async removeByIds(ids) {
+  async removeByIds(ids: number[]): Promise<void> {
     if (!ids || ids.length === 0) return
     try {
       await queueDB.changes.bulkDelete(ids)
@@ -97,8 +80,7 @@ export const syncQueue = {
     }
   },
 
-  // ✅ تعداد
-  async size() {
+  async size(): Promise<number> {
     try {
       return await queueDB.changes.count()
     } catch {
@@ -106,19 +88,16 @@ export const syncQueue = {
     }
   },
 
-  async isEmpty() {
+  async isEmpty(): Promise<boolean> {
     return (await this.size()) === 0
   },
 
-  // ═══════════════════════════════════════════════
-  // ✅ One-time migration از localStorage
-  // ═══════════════════════════════════════════════
-  async migrateFromLocalStorage() {
+  async migrateFromLocalStorage(): Promise<boolean> {
     try {
       const raw = localStorage.getItem(OLD_QUEUE_KEY)
       if (!raw) return false
 
-      let oldQueue = []
+      let oldQueue: any[] = []
       try {
         oldQueue = JSON.parse(raw)
       } catch {
@@ -136,13 +115,13 @@ export const syncQueue = {
         try {
           await this.add(change)
           migrated++
-        } catch (e) {
+        } catch (e: any) {
           console.warn('Skip invalid queue item:', e.message)
         }
       }
 
       localStorage.removeItem(OLD_QUEUE_KEY)
-      console.log(`✅ Migrated ${migrated}/${oldQueue.length} items from localStorage → IndexedDB`)
+      console.log(`✅ Migrated ${migrated}/${oldQueue.length} items to IndexedDB`)
       return true
     } catch (error) {
       console.error('Queue migration failed:', error)
@@ -150,10 +129,7 @@ export const syncQueue = {
     }
   },
 
-  // ═══════════════════════════════════════════════
-  // ✅ Debug helper
-  // ═══════════════════════════════════════════════
-  async debugDump() {
+  async debugDump(): Promise<QueueChange[]> {
     const all = await this.getAll()
     console.table(all.map(c => ({
       entity: c.entity,
@@ -165,27 +141,22 @@ export const syncQueue = {
   }
 }
 
-// ═══════════════════════════════════════════════
-// ✅ Last Sync Management (localStorage — سبک)
-// ═══════════════════════════════════════════════
 export const lastSync = {
-  get() {
+  get(): string | null {
     try {
       return localStorage.getItem(LAST_SYNC_KEY)
     } catch {
       return null
     }
   },
-
-  set(timestamp) {
+  set(timestamp: string): void {
     try {
       localStorage.setItem(LAST_SYNC_KEY, timestamp)
     } catch (error) {
       console.error('lastSync.set failed:', error)
     }
   },
-
-  clear() {
+  clear(): void {
     try {
       localStorage.removeItem(LAST_SYNC_KEY)
     } catch {}
