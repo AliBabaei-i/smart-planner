@@ -1,9 +1,11 @@
 import React, { useState, useCallback, memo } from 'react'
+import { Outlet } from 'react-router-dom' // ✅ اضافه شد
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
 
-const AppLayout = memo(({ children, onOpenSearch, onOpenQuickAdd }) => {
+// ✅ children رو برداشتیم چون دیگه لازم نیست
+const AppLayout = memo(({ onOpenSearch, onOpenQuickAdd }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), [])
@@ -38,7 +40,8 @@ const AppLayout = memo(({ children, onOpenSearch, onOpenQuickAdd }) => {
         
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-20 md:pb-0">
           <div className="p-4 md:p-6 min-h-full">
-            {children}
+            {/* ✅ اینجا جایی است که صفحات لود می‌شوند */}
+            <Outlet /> 
           </div>
         </main>
       </div>

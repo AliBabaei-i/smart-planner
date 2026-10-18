@@ -1,3 +1,5 @@
+// backend/src/services/authService.js
+import crypto from 'crypto' // ✅ فقط یک بار ایمپورت شده
 import { randomUUID } from 'crypto'
 import { get, run, transaction } from '../db/index.js'
 import { hashPassword, verifyPassword } from '../utils/password.js'
@@ -26,7 +28,6 @@ export const createUser = async ({ email, password, name }) => {
   }
 
   const passwordHash = await hashPassword(password)
-
   const now = new Date().toISOString()
   const userId = randomUUID()
 
@@ -78,16 +79,14 @@ export const createUser = async ({ email, password, name }) => {
     )
 
     logger.success(`User created: ${normalizedEmail}`)
-
-    const user = findUserById(userId)
-    return user
+    return findUserById(userId)
   })
 }
 
 export const authenticateUser = async ({ email, password }) => {
   const normalizedEmail = email.toLowerCase().trim()
-
   const user = findUserByEmail(normalizedEmail)
+  
   if (!user) {
     const error = new Error('Invalid email or password')
     error.statusCode = 401
@@ -121,17 +120,12 @@ export const createTokensForUser = (user) => {
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Invalidate همه sessionهای کاربر
+// ✅ Invalidate Sessions
 // ═══════════════════════════════════════════════
 export const invalidateAllSessions = (userId) => {
   try {
     const now = new Date().toISOString()
-
-    run(
-      `UPDATE users SET sessions_invalidated_at = ? WHERE id = ?`,
-      [now, userId]
-    )
-
+    run(`UPDATE users SET sessions_invalidated_at = ? WHERE id = ?`, [now, userId])
     logger.warn(`🔒 All sessions invalidated for user ${userId}`)
     return true
   } catch (error) {
@@ -140,24 +134,63 @@ export const invalidateAllSessions = (userId) => {
   }
 }
 
-// ═══════════════════════════════════════════════
-// ✅ چک کردن اینکه توکن کاربر باطل نشده باشه
-// ═══════════════════════════════════════════════
 export const isSessionValid = (userId, tokenIssuedAt) => {
   try {
-    const user = get(
-      `SELECT sessions_invalidated_at FROM users WHERE id = ?`,
-      [userId]
-    )
-
+    const user = get(`SELECT sessions_invalidated_at FROM users WHERE id = ?`, [userId])
     if (!user || !user.sessions_invalidated_at) return true
-
     const invalidatedAt = new Date(user.sessions_invalidated_at).getTime()
     return tokenIssuedAt >= invalidatedAt
   } catch (error) {
     logger.error(`isSessionValid error: ${error.message}`)
-    return true // در صورت خطا، اجازه بده (fail-open)
+    return true // fail-open
   }
+}
+
+// ═══════════════════════════════════════════════
+// ✅ Password Reset
+// ═══════════════════════════════════════════════
+export const generateResetToken = (email) => {
+  const user = findUserByEmail(email)
+  if (!user) return null
+
+  // ✅ استفاده از crypto که در بالا ایمپورت شد
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+  run(
+    `UPDATE users SET reset_token = ?, reset_expires_at = ? WHERE id = ?`,
+    [token, expiresAt, user.id]
+  )
+
+  return { token, user }
+}
+
+export const resetPassword = async (token, newPassword) => {
+  const user = get(`SELECT * FROM users WHERE reset_token = ?`, [token])
+
+  if (!user) {
+    const error = new Error('Invalid or expired reset token')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (new Date(user.reset_expires_at) < new Date()) {
+    const error = new Error('Reset token has expired')
+    error.statusCode = 400
+    throw error
+  }
+
+  const passwordHash = await hashPassword(newPassword)
+  run(
+    `UPDATE users
+     SET password_hash = ?, reset_token = NULL, reset_expires_at = NULL,
+         sessions_invalidated_at = ?
+     WHERE id = ?`,
+    [passwordHash, new Date().toISOString(), user.id]
+  )
+
+  logger.success(`Password reset for ${user.email}`)
+  return { success: true }
 }
 
 export default {
@@ -167,5 +200,7 @@ export default {
   authenticateUser,
   createTokensForUser,
   invalidateAllSessions,
-  isSessionValid
+  isSessionValid,
+  generateResetToken,
+  resetPassword
 }

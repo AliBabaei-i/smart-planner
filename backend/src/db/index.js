@@ -10,56 +10,44 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // ═══════════════════════════════════════════════
 // ✅ Ensure data directory exists
 // ═══════════════════════════════════════════════
-const dbDir = path.dirname(path.resolve(config.db.path))
+const dbPath = path.resolve(config.db.path)
+const dbDir = path.dirname(dbPath)
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
   logger.info(`Created database directory: ${dbDir}`)
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Open database
+// ✅ Open database + performance pragmas
 // ═══════════════════════════════════════════════
-export const db = new Database(path.resolve(config.db.path))
+export const db = new Database(dbPath)
 
-// ✅ تنظیمات performance
-db.pragma('journal_mode = WAL')      // Write-Ahead Logging (سریع‌تر)
-db.pragma('synchronous = NORMAL')
-db.pragma('foreign_keys = ON')
-db.pragma('cache_size = -64000')     // 64MB cache
+db.pragma('journal_mode = WAL')      // همزمانی write + crash-safe
+db.pragma('synchronous = NORMAL')    // trade-off بهینه برای WAL
+db.pragma('foreign_keys = ON')       // الزامی برای ON DELETE CASCADE
+db.pragma('busy_timeout = 5000')     // جلوگیری از SQLITE_BUSY در همزمانی
+db.pragma('cache_size = -64000')     // 64MB page cache
+db.pragma('temp_store = MEMORY')     // جدول‌های موقت در RAM
+db.pragma('mmap_size = 268435456')   // 256MB mmap برای read سریع
 
-logger.success(`Database connected: ${path.resolve(config.db.path)}`)
+logger.success(`Database connected: ${dbPath}`)
+logger.info(
+  `SQLite pragmas → WAL: ${db.pragma('journal_mode', { simple: true })}, ` +
+  `FK: ${db.pragma('foreign_keys', { simple: true })}`
+)
 
 // ═══════════════════════════════════════════════
-// ✅ Helper functions
+// ✅ Helpers
 // ═══════════════════════════════════════════════
-
-// ✅ اجرای SQL
 export const exec = (sql) => db.exec(sql)
-
-// ✅ prepare statement
 export const prepare = (sql) => db.prepare(sql)
 
-// ✅ یه ردیف
-export const get = (sql, params = []) => {
-  return db.prepare(sql).get(...params)
-}
+export const get = (sql, params = []) => db.prepare(sql).get(...params)
+export const all = (sql, params = []) => db.prepare(sql).all(...params)
+export const run = (sql, params = []) => db.prepare(sql).run(...params)
 
-// ✅ چند ردیف
-export const all = (sql, params = []) => {
-  return db.prepare(sql).all(...params)
-}
+export const transaction = (fn) => db.transaction(fn)()
 
-// ✅ اجرا (insert/update/delete)
-export const run = (sql, params = []) => {
-  return db.prepare(sql).run(...params)
-}
-
-// ✅ Transaction
-export const transaction = (fn) => {
-  return db.transaction(fn)()
-}
-
-// ✅ بستن
 export const close = () => {
   db.close()
   logger.info('Database closed')

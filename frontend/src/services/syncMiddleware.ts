@@ -1,10 +1,11 @@
 import type { Middleware, AnyAction } from '@reduxjs/toolkit'
 import { syncQueue } from './syncQueue'
 import { ENTITY_MAP, getEntityFromAction } from './syncEntities'
+import type { QueueChange } from './queueDB'
 
 const IGNORED_ACTIONS = [
   'auth/', 'theme/', 'notifications/', 'dashboard/',
-  'achievements/', 'pomodoro/', '@@', 'persist/'
+  'achievements/', 'pomodoro/', '@@', 'persist/',
 ]
 
 const WRITE_ACTIONS = [
@@ -21,7 +22,7 @@ const WRITE_ACTIONS = [
   'addSkillSession', 'deleteSkillSession', 'updateSkillLevel',
   'addAccount', 'updateAccount', 'deleteAccount', 'addTransaction',
   'updateTransaction', 'deleteTransaction', 'addPlan', 'updatePlan',
-  'deletePlan', 'payPlanDue', 'addBudget', 'updateBudget', 'deleteBudget'
+  'deletePlan', 'payPlanDue', 'addBudget', 'updateBudget', 'deleteBudget',
 ]
 
 const shouldSync = (action: AnyAction): boolean => {
@@ -31,7 +32,7 @@ const shouldSync = (action: AnyAction): boolean => {
   }
   const actionName = action.type.split('/')[1]
   if (!actionName) return false
-  return WRITE_ACTIONS.some(name => actionName.includes(name))
+  return WRITE_ACTIONS.some((name) => actionName.includes(name))
 }
 
 const getEntitiesFromState = (state: any, entityName: string): any[] => {
@@ -53,11 +54,19 @@ const filterFields = (obj: any, fields: string[]): any => {
     }
   }
   if (!result.id) result.id = obj.id
-  if (!result.updatedAt) result.updatedAt = obj.updatedAt || new Date().toISOString()
+  if (!result.updatedAt) {
+    result.updatedAt = obj.updatedAt || new Date().toISOString()
+  }
   return result
 }
 
-const extractChanges = (action: AnyAction, state: any): any => {
+// ✅ نوع برگشتی دقیق — کامپایلر جلوی جاافتادن entityId/queuedAt رو می‌گیره
+type QueuedChange = Omit<QueueChange, 'id'>
+
+const extractChanges = (
+  action: AnyAction,
+  state: any
+): QueuedChange | null => {
   const entityName = getEntityFromAction(action.type)
   if (!entityName) return null
 
@@ -67,46 +76,60 @@ const extractChanges = (action: AnyAction, state: any): any => {
   const actionName = action.type.split('/')[1] || ''
   const payload = action.payload
   const entities = getEntitiesFromState(state, entityName)
+  const now = Date.now()
 
+  // ─── DELETE ───
   if (actionName.toLowerCase().includes('delete')) {
     const id = typeof payload === 'string' ? payload : payload?.id
     if (!id) return null
     return {
       entity: config.backendName,
+      entityId: String(id),
       data: {
         id,
         updatedAt: new Date().toISOString(),
-        deletedAt: new Date().toISOString()
+        deletedAt: new Date().toISOString(),
       },
-      isDelete: true
+      isDelete: true,
+      queuedAt: now,
     }
   }
 
+  // ─── ADD ───
   if (actionName.toLowerCase().includes('add')) {
     if (entities.length === 0) return null
     const payloadTitle = payload?.title || payload?.name
-    let newEntity = null
+    let newEntity: any = null
 
     if (payloadTitle) {
-      newEntity = entities.find(e => e.title === payloadTitle || e.name === payloadTitle)
+      newEntity = entities.find(
+        (e) => e.title === payloadTitle || e.name === payloadTitle
+      )
     }
     if (!newEntity) newEntity = entities[entities.length - 1]
     if (!newEntity) return null
 
     return {
       entity: config.backendName,
-      data: filterFields(newEntity, config.fields)
+      entityId: String(newEntity.id),
+      data: filterFields(newEntity, config.fields),
+      isDelete: false,
+      queuedAt: now,
     }
   }
 
+  // ─── UPDATE (پیش‌فرض) ───
   const id = typeof payload === 'string' ? payload : payload?.id
   if (!id) return null
-  const entity = entities.find(e => e.id === id)
+  const entity = entities.find((e) => e.id === id)
   if (!entity) return null
 
   return {
     entity: config.backendName,
-    data: filterFields(entity, config.fields)
+    entityId: String(id),
+    data: filterFields(entity, config.fields),
+    isDelete: false,
+    queuedAt: now,
   }
 }
 

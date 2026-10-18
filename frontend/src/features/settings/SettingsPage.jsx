@@ -29,7 +29,7 @@ import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import NotificationSettings from './NotificationSettings'
-import ThemeSettings from '../theme/ThemeSettings'
+
 import PomodoroSettings from '../pomodoro/PomodoroSettings'
 import DangerZone from './DangerZone'
 import KeyboardShortcutsHelp from './KeyboardShortcutsHelp'
@@ -43,6 +43,7 @@ import {
 } from '../../utils/dataExport'
 import { syncApi } from '../../services/syncApi'
 import { syncQueue, lastSync } from '../../services/syncQueue'
+import ThemeSettings from '../theme/ThemeSettings'
 
 const SettingsPage = () => {
   const { t } = useTranslation()

@@ -12,7 +12,10 @@ import {
 import { requireAuth } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { authLimiter } from '../middleware/rateLimit.js'
-
+import {
+  forgotPassword,
+  resetPasswordHandler,
+} from '../controllers/auth.controller.js'
 const router = express.Router()
 
 router.post('/signup', authLimiter, validate(signupSchema), signup)
@@ -21,5 +24,8 @@ router.post('/refresh', validate(refreshSchema), refresh)
 
 router.get('/me', requireAuth, me)
 router.post('/signout', requireAuth, signout)
+
+router.post('/forgot-password', forgotPassword)
+router.post('/reset-password', resetPasswordHandler)
 
 export default router

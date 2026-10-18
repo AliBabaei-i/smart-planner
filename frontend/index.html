@@ -4,153 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
-    <!-- ✅ Primary Meta Tags -->
     <title>برنامه‌ریزی هوشمند | Smart Planner</title>
-    <meta name="title" content="برنامه‌ریزی هوشمند | Smart Planner" />
     <meta name="description" content="پلتفرم جامع برنامه‌ریزی، مدیریت زمان و بهره‌وری با پشتیبانی کامل از فارسی و انگلیسی" />
     <meta name="keywords" content="برنامه‌ریزی, مدیریت زمان, بهره‌وری, پومودورو, پروژه, کارها, task management, productivity, planner" />
-    <meta name="author" content="Smart Planner Team" />
-    <meta name="robots" content="index, follow" />
     
-    <!-- ✅ Theme Color -->
     <meta name="theme-color" content="#3b82f6" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b82f6" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e40af" />
     <meta name="color-scheme" content="light dark" />
     
-    <!-- ✅ Open Graph / Facebook -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://smartplanner.app/" />
     <meta property="og:title" content="برنامه‌ریزی هوشمند | Smart Planner" />
     <meta property="og:description" content="پلتفرم جامع برنامه‌ریزی، مدیریت زمان و بهره‌وری" />
-    <meta property="og:image" content="/og-image.png" />
-    <meta property="og:locale" content="fa_IR" />
-    <meta property="og:locale:alternate" content="en_US" />
     
-    <!-- ✅ Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://smartplanner.app/" />
-    <meta property="twitter:title" content="برنامه‌ریزی هوشمند | Smart Planner" />
-    <meta property="twitter:description" content="پلتفرم جامع برنامه‌ریزی، مدیریت زمان و بهره‌وری" />
-    <meta property="twitter:image" content="/og-image.png" />
-    
-    <!-- ✅ PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- ✅ Favicon -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192x192.png" />
     
-    <!-- ✅ Apple Touch Icon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3b82f6" />
-    
-    <!-- ✅ Apple PWA -->
+    <!-- Apple PWA -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="SmartPlanner" />
-    
-    <!-- ✅ Microsoft -->
-    <meta name="msapplication-TileColor" content="#3b82f6" />
-    <meta name="msapplication-config" content="/browserconfig.xml" />
 
-    <!-- ═══════════════════════════════════════════════ -->
-    <!-- ✅ FONTS — بهینه‌شده برای Performance          -->
-    <!-- ═══════════════════════════════════════════════ -->
-    
-    <!-- ✅ Preconnect: اتصال‌های DNS/TLS از قبل برقرار می‌شن -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
-    <!-- ✅ DNS Prefetch برای مرورگرهای قدیمی‌تر -->
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-
-    <!-- ✅ Vazirmatn: فقط یک بار، از CDN -->
-    <link 
-      rel="stylesheet" 
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      crossorigin
-    />
-
-    <!-- ✅ Inter: استفاده از Variable Font (یک فایل برای همه وزن‌ها) -->
-    <link 
-      rel="stylesheet" 
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-    
-    <!-- ✅ Service Worker Registration (فقط در Production) -->
-    <script>
-      (function() {
-        // تشخیص محیط Development
-        var isDev = 
-          location.hostname === 'localhost' || 
-          location.hostname === '127.0.0.1' ||
-          location.hostname.startsWith('192.168.') ||
-          location.hostname.startsWith('10.') ||
-          location.hostname.endsWith('.local');
-        
-        if (!('serviceWorker' in navigator)) {
-          return;
-        }
-        
-        if (!isDev) {
-          // ✅ Production: ثبت Service Worker
-          window.addEventListener('load', function() {
-            navigator.serviceWorker
-              .register('/sw.js')
-              .then(function(registration) {
-                console.log('✅ ServiceWorker registered:', registration.scope);
-              })
-              .catch(function(error) {
-                console.log('❌ ServiceWorker registration failed:', error);
-              });
-          });
-        } else {
-          // ✅ Development: حذف Service Worker های قبلی و پاک کردن cache
-          console.log('🔧 Dev mode detected - cleaning up Service Workers...');
-          
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            if (registrations.length === 0) {
-              console.log('✅ No Service Workers to unregister');
-              return;
-            }
-            
-            registrations.forEach(function(registration) {
-              registration.unregister().then(function(success) {
-                if (success) {
-                  console.log('🗑️ ServiceWorker unregistered:', registration.scope);
-                }
-              });
-            });
-            
-            // بعد از unregister، صفحه رو reload کن
-            setTimeout(function() {
-              if (sessionStorage.getItem('sw-cleaned') !== 'true') {
-                sessionStorage.setItem('sw-cleaned', 'true');
-                window.location.reload();
-              }
-            }, 500);
-          });
-          
-          // پاک کردن cache ها
-          if (window.caches) {
-            caches.keys().then(function(names) {
-              names.forEach(function(name) {
-                caches.delete(name);
-                console.log('🗑️ Cache deleted:', name);
-              });
-            });
-          }
-        }
-      })();
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

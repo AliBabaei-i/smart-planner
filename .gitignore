@@ -52,3 +52,23 @@ yarn-error.log*
 Thumbs.db
 coverage/
 *.backup
+# Build artifacts
+dev-dist/
+dist/
+*.tsbuildinfo
+
+# Runtime DB
+backend/data/*.db
+backend/data/*.db-wal
+backend/data/*.db-shm
+
+# Env
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+npm-debug.log*

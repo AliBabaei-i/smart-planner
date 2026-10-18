@@ -1,271 +1,201 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import {
-  FiMail, FiLock, FiUser, FiEye, FiEyeOff,
-  FiLogIn, FiUserPlus, FiGlobe
-} from 'react-icons/fi'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
 import {
-  signUpUser,
   signInUser,
+  signUpUser,
   clearError,
   selectAuthLoading,
   selectAuthError,
   selectIsAuthenticated
 } from './authSlice'
 
-const LoginPage = () => {
+export default function LoginPage() {
   const { i18n } = useTranslation()
+  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const location = useLocation()
-  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  const isLoading = useSelector(selectAuthLoading)
-  const authError = useSelector(selectAuthError)
+  const loading = useSelector(selectAuthLoading)
+  const error = useSelector(selectAuthError)
   const isAuthenticated = useSelector(selectIsAuthenticated)
 
   const [mode, setMode] = useState('signin')
-  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
-    password: ''
+    password: '',
+    name: '',
+    confirmPassword: ''
   })
-
-  const from = location.state?.from?.pathname || '/'
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true })
+      navigate('/', { replace: true })
     }
-  }, [isAuthenticated, navigate, from])
+  }, [isAuthenticated, navigate])
 
   useEffect(() => {
-    if (authError) {
-      toast.error(authError, {
-        position: 'bottom-left',
-        autoClose: 4000
-      })
-      dispatch(clearError())
+    dispatch(clearError())
+  }, [mode, dispatch])
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error, { position: 'bottom-left', autoClose: 3000 })
     }
-  }, [authError, dispatch])
+  }, [error])
 
-  const handleChange = useCallback((field, value) => {
+  const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-  }, [])
+  }
 
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!formData.email.trim()) {
-      toast.error(isPersian ? 'ایمیل الزامی است' : 'Email is required')
-      return
-    }
-    if (!formData.password || formData.password.length < 6) {
-      toast.error(isPersian ? 'رمز عبور باید حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 characters')
-      return
-    }
-    if (mode === 'signup' && !formData.name.trim()) {
-      toast.error(isPersian ? 'نام الزامی است' : 'Name is required')
-      return
-    }
-
-    try {
-      if (mode === 'signup') {
-        await dispatch(signUpUser(formData)).unwrap()
-        toast.success(
-          isPersian ? 'ثبت‌نام موفق! خوش آمدی' : 'Sign up successful! Welcome',
-          { position: 'bottom-left', autoClose: 3000 }
-        )
-      } else {
-        await dispatch(signInUser(formData)).unwrap()
-        toast.success(
-          isPersian ? 'خوش آمدی!' : 'Welcome back!',
-          { position: 'bottom-left', autoClose: 2500 }
-        )
+    if (mode === 'signin') {
+      if (!formData.email || !formData.password) {
+        toast.error(isPersian ? 'ایمیل و رمز عبور الزامی است' : 'Email and password required')
+        return
       }
-    } catch (error) {
-      // خطا از useEffect نمایش داده می‌شه
+      await dispatch(signInUser({
+        email: formData.email,
+        password: formData.password
+      }))
+    } else {
+      if (!formData.email || !formData.password || !formData.name) {
+        toast.error(isPersian ? 'همه فیلدها الزامی است' : 'All fields required')
+        return
+      }
+      if (formData.password.length < 6) {
+        toast.error(isPersian ? 'رمز عبور باید حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 chars')
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error(isPersian ? 'رمزها یکسان نیستند' : 'Passwords do not match')
+        return
+      }
+      await dispatch(signUpUser({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
+      }))
     }
-  }, [formData, mode, dispatch, isPersian])
-
-  const toggleMode = useCallback(() => {
-    setMode(prev => prev === 'signin' ? 'signup' : 'signin')
-    setFormData({ name: '', email: '', password: '' })
-  }, [])
-
-  const toggleLanguage = useCallback(() => {
-    i18n.changeLanguage(isPersian ? 'en' : 'fa')
-  }, [i18n, isPersian])
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="fixed inset-0 opacity-5 dark:opacity-10 pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, #10b981 0%, transparent 50%),
-                            radial-gradient(circle at 80% 70%, #3b82f6 0%, transparent 50%)`
-        }} />
-      </div>
-
-      <button
-        onClick={toggleLanguage}
-        className="fixed top-4 end-4 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors shadow-sm z-10"
-      >
-        <div className="flex items-center gap-1.5">
-          <FiGlobe size={16} />
-          <span className="text-xs font-medium">{isPersian ? 'EN' : 'فا'}</span>
-        </div>
-      </button>
-
-      <div className="w-full max-w-md relative">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <span className="text-4xl">📋</span>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+            SP
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isPersian ? 'برنامه‌ریزی هوشمند' : 'Smart Planner'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {mode === 'signin'
-              ? (isPersian ? 'به حسابت وارد شو' : 'Sign in to your account')
-              : (isPersian ? 'حساب جدید بساز' : 'Create your account')}
+              ? (isPersian ? 'به حسابت خوش آمدی' : 'Welcome back')
+              : (isPersian ? 'حساب جدید بساز' : 'Create a new account')}
           </p>
         </div>
 
-        <Card className="p-6 md:p-8 shadow-xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {isPersian ? 'نام' : 'Name'}
-                </label>
-                <div className="relative">
-                  <FiUser size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    placeholder={isPersian ? 'مثلاً: علی' : 'e.g., Ali'}
-                    className="w-full ps-10 pe-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                    disabled={isLoading}
-                    autoComplete="name"
-                  />
-                </div>
-              </div>
-            )}
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6">
+          <button
+            type="button"
+            onClick={() => setMode('signin')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
+              mode === 'signin'
+                ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            {isPersian ? 'ورود' : 'Sign In'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('signup')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
+              mode === 'signup'
+                ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            {isPersian ? 'ثبت‌نام' : 'Sign Up'}
+          </button>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {isPersian ? 'ایمیل' : 'Email'}
-              </label>
-              <div className="relative">
-                <FiMail size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder="email@example.com"
-                  className="w-full ps-10 pe-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                  disabled={isLoading}
-                  autoComplete="email"
-                  required
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <Input
+              label={isPersian ? 'نام' : 'Name'}
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder={isPersian ? 'نام کامل' : 'Full name'}
+              required
+            />
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {isPersian ? 'رمز عبور' : 'Password'}
-              </label>
-              <div className="relative">
-                <FiLock size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full ps-10 pe-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                  disabled={isLoading}
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                </button>
-              </div>
-              {mode === 'signup' && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {isPersian ? 'حداقل ۶ کاراکتر' : 'At least 6 characters'}
-                </p>
-              )}
-            </div>
+          <Input
+            label={isPersian ? 'ایمیل' : 'Email'}
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            placeholder="you@example.com"
+            required
+            autoComplete="email"
+          />
 
-            <Button
-              type="submit"
-              loading={isLoading}
-              disabled={isLoading}
-              className="w-full !bg-emerald-600 hover:!bg-emerald-700 py-2.5"
-            >
-              {mode === 'signin' ? (
-                <>
-                  <FiLogIn size={16} />
-                  <span>{isPersian ? 'ورود' : 'Sign In'}</span>
-                </>
-              ) : (
-                <>
-                  <FiUserPlus size={16} />
-                  <span>{isPersian ? 'ثبت‌نام' : 'Sign Up'}</span>
-                </>
-              )}
-            </Button>
-          </form>
+          <Input
+            label={isPersian ? 'رمز عبور' : 'Password'}
+            type="password"
+            value={formData.password}
+            onChange={(e) => handleChange('password', e.target.value)}
+            placeholder="••••••••"
+            required
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          />
 
-          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            {mode === 'signin' ? (
-              <>
-                {isPersian ? 'حساب نداری؟' : "Don't have an account?"}{' '}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
-                >
-                  {isPersian ? 'ثبت‌نام کن' : 'Sign up'}
-                </button>
-              </>
-            ) : (
-              <>
-                {isPersian ? 'حساب داری؟' : 'Already have an account?'}{' '}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
-                >
-                  {isPersian ? 'وارد شو' : 'Sign in'}
-                </button>
-              </>
-            )}
-          </div>
-        </Card>
+          {mode === 'signup' && (
+            <Input
+              label={isPersian ? 'تکرار رمز عبور' : 'Confirm Password'}
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
+            />
+          )}
 
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-          {isPersian
-            ? 'با ورود، شرایط استفاده را می‌پذیری'
-            : 'By signing in, you agree to our Terms'}
+          <Button
+            type="submit"
+            loading={loading}
+            className="w-full !bg-primary-600 hover:!bg-primary-700"
+          >
+            {mode === 'signin'
+              ? (isPersian ? 'ورود به حساب' : 'Sign In')
+              : (isPersian ? 'ساخت حساب' : 'Create Account')}
+          </Button>
+        </form>
+
+        {mode === 'signin' && (
+          <Link
+            to="/forgot-password"
+            className="block text-center text-sm text-primary-600 hover:underline dark:text-primary-400 mt-4"
+          >
+            {isPersian ? 'رمز عبور را فراموش کردی؟' : 'Forgot password?'}
+          </Link>
+        )}
+
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
+          {isPersian ? 'با ورود، قوانین ما را می‌پذیری' : 'By signing in, you accept our terms'}
         </p>
-      </div>
+      </Card>
     </div>
   )
 }
-
-export default LoginPage
