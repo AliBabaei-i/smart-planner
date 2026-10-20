@@ -1,20 +1,38 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
-import { FiMenu, FiSearch, FiFolder, FiCheckSquare, FiTrendingUp, FiPlus } from 'react-icons/fi'
+import {
+  FiMenu,
+  FiSearch,
+  FiFolder,
+  FiCheckSquare,
+  FiTrendingUp,
+  FiPlus,
+} from 'react-icons/fi'
 import Notifications from '../../features/notifications/Notifications'
 import ThemeToggle from '../../features/theme/ThemeToggle'
 import LanguageSwitcher from '../common/LanguageSwitcher'
 import SyncIndicator from '../sync/SyncIndicator'
-const Header = ({ onOpenSearch, onOpenQuickAdd, onToggleSidebar }) => {
-  const { t } = useTranslation()
-  const { projects = [] } = useSelector(state => state.projects)
-  const { tasks = [] } = useSelector(state => state.tasks)
+import type { RootState } from '../../app/store'
 
-  const completedTasks = tasks.filter(task => task.completed).length
-  const productivity = tasks.length > 0
-    ? Math.round((completedTasks / tasks.length) * 100)
-    : 0
+interface HeaderProps {
+  onOpenSearch: () => void
+  onOpenQuickAdd: () => void
+  onToggleSidebar: () => void
+}
+
+const Header: React.FC<HeaderProps> = ({
+  onOpenSearch,
+  onOpenQuickAdd,
+  onToggleSidebar,
+}) => {
+  const { t } = useTranslation()
+  const { projects = [] } = useSelector((s: RootState) => s.projects)
+  const { tasks = [] } = useSelector((s: RootState) => s.tasks)
+
+  const completedTasks = tasks.filter((task) => task.completed).length
+  const productivity =
+    tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -37,7 +55,7 @@ const Header = ({ onOpenSearch, onOpenQuickAdd, onToggleSidebar }) => {
             </h1>
           </div>
 
-          {/* دکمه جستجو */}
+          {/* جستجو */}
           <button
             onClick={onOpenSearch}
             className="hidden md:flex items-center gap-2.5 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-500 dark:text-gray-400 flex-1 max-w-md"
@@ -75,14 +93,15 @@ const Header = ({ onOpenSearch, onOpenQuickAdd, onToggleSidebar }) => {
               </div>
             </div>
 
-            {/* ✅ دکمه Quick Add */}
             <button
               onClick={onOpenQuickAdd}
               className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
               title={`${t('actions.quickAdd') || 'افزودن سریع'} (N)`}
             >
               <FiPlus size={16} />
-              <span className="hidden md:inline">{t('actions.quickAdd') || 'افزودن'}</span>
+              <span className="hidden md:inline">
+                {t('actions.quickAdd') || 'افزودن'}
+              </span>
             </button>
 
             <button

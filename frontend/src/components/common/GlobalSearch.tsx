@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import type { IconType } from 'react-icons'
 import {
   FiSearch,
   FiHome,
@@ -15,21 +16,45 @@ import {
   FiCircle,
   FiActivity,
   FiEdit3,
-  FiTarget
+  FiTarget,
+  FiBookOpen,      // ✅ اضافه شد
+  FiTrendingUp,    // ✅ اضافه شد
 } from 'react-icons/fi'
+import type { RootState } from '../../app/store'
 
-const GlobalSearch = ({ isOpen, onClose }) => {
+interface SearchResult {
+  type: 'action' | 'navigation' | 'task' | 'project' | 'note' | 'habit' | 'goal' | 'journal' | 'skill'
+  id: string
+  title: string
+  subtitle?: string
+  path: string
+  Icon: IconType
+  iconColor?: string
+  data?: any
+}
+
+interface GlobalSearchProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { tasks = [] } = useSelector(state => state.tasks)
-  const { projects = [] } = useSelector(state => state.projects)
-  const { notes = [] } = useSelector(state => state.notes || { notes: [] })
-  const { habits = [] } = useSelector(state => state.habits || { habits: [] })
-  const { goals = [] } = useSelector(state => state.goals || { goals: [] })
-const { journals = [], skills = [] } = useSelector(state => state.growth || {})
+
+  const tasks = useSelector((s: RootState) => s.tasks?.tasks ?? []) as any[]
+  const projects = useSelector((s: RootState) => s.projects?.projects ?? []) as any[]
+  const notes = useSelector((s: RootState) => (s as any).notes?.notes ?? []) as any[]
+  const habits = useSelector((s: RootState) => (s as any).habits?.habits ?? []) as any[]
+  const goals = useSelector((s: RootState) => (s as any).goals?.goals ?? []) as any[]
+
+  const growthState = useSelector((s: RootState) => (s as any).growth) || {}
+  const journals = (growthState.journals ?? []) as any[]
+  const skills = (growthState.skills ?? []) as any[]
+
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -39,7 +64,8 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
     }
   }, [isOpen])
 
-  const searchResults = useMemo(() => {
+  const searchResults = useMemo<SearchResult[]>(() => {
+    // Quick access — وقتی هنوز تایپ نکرده
     if (!query.trim()) {
       return [
         { type: 'action', id: 'dashboard', title: t('nav.dashboard'), path: '/', Icon: FiHome, iconColor: 'text-gray-500' },
@@ -48,7 +74,6 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
         { type: 'action', id: 'habits', title: t('nav.habits'), path: '/habits', Icon: FiActivity, iconColor: 'text-orange-500' },
         { type: 'action', id: 'notes', title: t('nav.notes'), path: '/notes', Icon: FiEdit3, iconColor: 'text-purple-500' },
         { type: 'action', id: 'goals', title: t('nav.goals'), path: '/goals', Icon: FiTarget, iconColor: 'text-indigo-500' },
-        
         { type: 'action', id: 'planning', title: t('nav.planning'), path: '/planning', Icon: FiCalendar, iconColor: 'text-teal-500' },
         { type: 'action', id: 'analytics', title: t('nav.analytics'), path: '/analytics', Icon: FiBarChart2, iconColor: 'text-indigo-500' },
         { type: 'action', id: 'achievements', title: t('nav.achievements'), path: '/achievements', Icon: FiAward, iconColor: 'text-yellow-500' },
@@ -57,15 +82,14 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
     }
 
     const lowerQuery = query.toLowerCase().trim()
-    const results = []
+    const results: SearchResult[] = []
 
     // Tasks
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const matchTitle = task.title?.toLowerCase().includes(lowerQuery)
       const matchDesc = task.description?.toLowerCase().includes(lowerQuery)
-
       if (matchTitle || matchDesc) {
-        const project = projects.find(p => p.id === task.projectId)
+        const project = projects.find((p) => p.id === task.projectId)
         results.push({
           type: 'task',
           id: `task-${task.id}`,
@@ -74,16 +98,15 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
           path: '/tasks',
           Icon: task.completed ? FiCheckCircle : FiCircle,
           iconColor: task.completed ? 'text-green-500' : 'text-gray-400',
-          data: task
+          data: task,
         })
       }
     })
 
     // Projects
-    projects.forEach(project => {
+    projects.forEach((project) => {
       const matchName = project.name?.toLowerCase().includes(lowerQuery)
       const matchDesc = project.description?.toLowerCase().includes(lowerQuery)
-
       if (matchName || matchDesc) {
         results.push({
           type: 'project',
@@ -93,16 +116,15 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
           path: '/projects',
           Icon: FiFolder,
           iconColor: 'text-blue-500',
-          data: project
+          data: project,
         })
       }
     })
 
     // Notes
-    notes.forEach(note => {
+    notes.forEach((note) => {
       const matchTitle = note.title?.toLowerCase().includes(lowerQuery)
       const matchContent = note.content?.toLowerCase().includes(lowerQuery)
-
       if (matchTitle || matchContent) {
         results.push({
           type: 'note',
@@ -112,16 +134,15 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
           path: '/notes',
           Icon: FiEdit3,
           iconColor: 'text-purple-500',
-          data: note
+          data: note,
         })
       }
     })
 
     // Habits
-    habits.forEach(habit => {
+    habits.forEach((habit) => {
       const matchName = habit.name?.toLowerCase().includes(lowerQuery)
       const matchDesc = habit.description?.toLowerCase().includes(lowerQuery)
-
       if (matchName || matchDesc) {
         results.push({
           type: 'habit',
@@ -131,16 +152,15 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
           path: '/habits',
           Icon: FiActivity,
           iconColor: 'text-orange-500',
-          data: habit
+          data: habit,
         })
       }
     })
 
     // Goals
-    goals.forEach(goal => {
+    goals.forEach((goal) => {
       const matchTitle = goal.title?.toLowerCase().includes(lowerQuery)
       const matchDesc = goal.description?.toLowerCase().includes(lowerQuery)
-
       if (matchTitle || matchDesc) {
         results.push({
           type: 'goal',
@@ -150,49 +170,51 @@ const { journals = [], skills = [] } = useSelector(state => state.growth || {})
           path: '/goals',
           Icon: FiTarget,
           iconColor: 'text-indigo-500',
-          data: goal
+          data: goal,
         })
       }
     })
-// Journals
-journals.forEach(journal => {
-  if (
-    journal.reflection?.toLowerCase().includes(lowerQuery) ||
-    journal.gratitude?.toLowerCase().includes(lowerQuery)
-  ) {
-    results.push({
-      type: 'journal',
-      id: `journal-${journal.id}`,
-      title: journal.date,
-      subtitle: journal.reflection?.substring(0, 50) || '',
-      path: '/growth',
-      Icon: FiBookOpen,
-      iconColor: 'text-purple-500',
-      data: journal
-    })
-  }
-})
 
-// Skills
-skills.forEach(skill => {
-  if (
-    skill.name?.toLowerCase().includes(lowerQuery) ||
-    skill.description?.toLowerCase().includes(lowerQuery)
-  ) {
-    results.push({
-      type: 'skill',
-      id: `skill-${skill.id}`,
-      title: skill.name,
-      subtitle: skill.description?.substring(0, 50) || '',
-      path: '/growth',
-      Icon: FiAward,
-      iconColor: 'text-blue-500',
-      data: skill
+    // Journals
+    journals.forEach((journal) => {
+      if (
+        journal.reflection?.toLowerCase().includes(lowerQuery) ||
+        journal.gratitude?.toLowerCase().includes(lowerQuery)
+      ) {
+        results.push({
+          type: 'journal',
+          id: `journal-${journal.id}`,
+          title: journal.date,
+          subtitle: journal.reflection?.substring(0, 50) || '',
+          path: '/growth',
+          Icon: FiBookOpen,
+          iconColor: 'text-purple-500',
+          data: journal,
+        })
+      }
     })
-  }
-})
-    // Menu
-    const menuItems = [
+
+    // Skills
+    skills.forEach((skill) => {
+      if (
+        skill.name?.toLowerCase().includes(lowerQuery) ||
+        skill.description?.toLowerCase().includes(lowerQuery)
+      ) {
+        results.push({
+          type: 'skill',
+          id: `skill-${skill.id}`,
+          title: skill.name,
+          subtitle: skill.description?.substring(0, 50) || '',
+          path: '/growth',
+          Icon: FiAward,
+          iconColor: 'text-blue-500',
+          data: skill,
+        })
+      }
+    })
+
+    // Navigation
+    const menuItems: Array<{ title: string; path: string; Icon: IconType }> = [
       { title: t('nav.dashboard'), path: '/', Icon: FiHome },
       { title: t('nav.projects'), path: '/projects', Icon: FiFolder },
       { title: t('nav.tasks'), path: '/tasks', Icon: FiCheckSquare },
@@ -203,10 +225,10 @@ skills.forEach(skill => {
       { title: t('nav.planning'), path: '/planning', Icon: FiCalendar },
       { title: t('nav.analytics'), path: '/analytics', Icon: FiBarChart2 },
       { title: t('nav.achievements'), path: '/achievements', Icon: FiAward },
-      { title: t('nav.settings'), path: '/settings', Icon: FiSettings }
+      { title: t('nav.settings'), path: '/settings', Icon: FiSettings },
     ]
 
-    menuItems.forEach(item => {
+    menuItems.forEach((item) => {
       if (item.title.toLowerCase().includes(lowerQuery)) {
         results.push({
           type: 'navigation',
@@ -215,27 +237,32 @@ skills.forEach(skill => {
           subtitle: t('search.navigateTo'),
           path: item.path,
           Icon: item.Icon,
-          iconColor: 'text-gray-500'
+          iconColor: 'text-gray-500',
         })
       }
     })
 
     return results.slice(0, 10)
-  }, [query, tasks, projects, notes, habits, goals, t])
+  }, [query, tasks, projects, notes, habits, goals, journals, skills, t])
+
+  const handleSelectResult = (result: SearchResult) => {
+    navigate(result.path)
+    onClose()
+  }
 
   useEffect(() => {
     if (!isOpen) return
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose()
       } else if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setActiveIndex(prev => prev < searchResults.length - 1 ? prev + 1 : prev)
+        setActiveIndex((prev) => (prev < searchResults.length - 1 ? prev + 1 : prev))
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setActiveIndex(prev => prev > 0 ? prev - 1 : 0)
+        setActiveIndex((prev) => (prev > 0 ? prev - 1 : 0))
       } else if (e.key === 'Enter' && searchResults[activeIndex]) {
         e.preventDefault()
         handleSelectResult(searchResults[activeIndex])
@@ -244,12 +271,7 @@ skills.forEach(skill => {
 
     document.addEventListener('keydown', handleKeyDown, true)
     return () => document.removeEventListener('keydown', handleKeyDown, true)
-  }, [isOpen, activeIndex, searchResults])
-
-  const handleSelectResult = (result) => {
-    navigate(result.path)
-    onClose()
-  }
+  }, [isOpen, activeIndex, searchResults, onClose])
 
   if (!isOpen) return null
 
@@ -268,7 +290,10 @@ skills.forEach(skill => {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setActiveIndex(0) }}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setActiveIndex(0)
+            }}
             placeholder={t('search.placeholder')}
             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 text-lg"
           />
@@ -287,7 +312,9 @@ skills.forEach(skill => {
           ) : (
             <div className="p-2">
               <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {query === '' ? t('search.quickAccess') : `${t('search.results')} (${searchResults.length})`}
+                {query === ''
+                  ? t('search.quickAccess')
+                  : `${t('search.results')} (${searchResults.length})`}
               </div>
               {searchResults.map((result, index) => {
                 const IconComponent = result.Icon
@@ -303,7 +330,10 @@ skills.forEach(skill => {
                     }`}
                   >
                     <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <IconComponent size={20} className={result.iconColor || 'text-gray-500'} />
+                      <IconComponent
+                        size={20}
+                        className={result.iconColor || 'text-gray-500'}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 dark:text-white truncate text-sm">
@@ -315,14 +345,15 @@ skills.forEach(skill => {
                         </div>
                       )}
                     </div>
-                    {result.type && result.type !== 'action' && result.type !== 'navigation' && (
+                    {result.type !== 'action' && result.type !== 'navigation' && (
                       <span className="text-xs text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded flex-shrink-0">
-                        {result.type === 'task' ? t('search.task')
-                          : result.type === 'project' ? t('search.project')
-                          : result.type === 'note' ? t('search.note')
-                          : result.type === 'habit' ? t('search.habit')
-                          : result.type === 'goal' ? t('search.goal')
-                          : ''}
+                        {result.type === 'task' && t('search.task')}
+                        {result.type === 'project' && t('search.project')}
+                        {result.type === 'note' && t('search.note')}
+                        {result.type === 'habit' && t('search.habit')}
+                        {result.type === 'goal' && t('search.goal')}
+                        {result.type === 'journal' && 'Journal'}
+                        {result.type === 'skill' && 'Skill'}
                       </span>
                     )}
                   </button>
@@ -335,19 +366,27 @@ skills.forEach(skill => {
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 flex-wrap gap-2">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="flex items-center gap-1">
-              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">↑↓</kbd>
+              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                ↑↓
+              </kbd>
               <span>{t('search.hint.move')}</span>
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Enter</kbd>
+              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                Enter
+              </kbd>
               <span>{t('search.hint.select')}</span>
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Esc</kbd>
+              <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                Esc
+              </kbd>
               <span>{t('search.hint.close')}</span>
             </span>
           </div>
-          <span className="hidden md:inline">{searchResults.length} {t('search.results')}</span>
+          <span className="hidden md:inline">
+            {searchResults.length} {t('search.results')}
+          </span>
         </div>
       </div>
     </div>
