@@ -1,5 +1,7 @@
 import type { ID, ISODate, DateStr } from './common'
 
+export type GoalStatus = 'active' | 'completed' | 'paused' | 'archived'
+
 export interface Milestone {
   id: ID
   title: string
@@ -11,7 +13,7 @@ export interface Goal {
   title: string
   description: string
   category: string
-  status: string
+  status: GoalStatus
   color: string
   startDate: DateStr | null
   targetDate: DateStr | null

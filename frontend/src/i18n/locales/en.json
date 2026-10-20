@@ -16,7 +16,8 @@
         "achievements": "Achievements",
         "settings": "Settings",
         "growth": "Growth",
-        "finance": "Finance"
+        "finance": "Finance",
+        "rewards": "Rewards"
     },
     "actions": {
         "create": "Create",
@@ -51,22 +52,31 @@
         "quickAdd": "Quick Add"
     },
     "dashboard": {
-        "title": "Dashboard",
-        "subtitle": "Overview of your activities",
-        "customize": "Customize",
-        "saveLayout": "Save Layout",
-        "resetLayout": "Reset Layout",
-        "hiddenWidgets": "Hidden Widgets",
-        "noWidgets": "All widgets are hidden",
-        "editModeHint": "You can resize, reorder, or hide widgets",
-        "sizeSmall": "Small",
-        "sizeMedium": "Medium",
-        "sizeLarge": "Large",
-        "sizeFull": "Full",
-        "moveUp": "Move up",
-        "moveDown": "Move down",
-        "hide": "Hide"
-    },
+  "title": "Dashboard",
+  "customize": "Customize",
+  "saveLayout": "Save Layout",
+  "resetLayout": "Reset Layout",
+  "editModeHint": "Reorder, hide, or resize widgets",
+  "hiddenWidgets": "Hidden Widgets",
+  "noWidgets": "No widgets enabled",
+  "widgets": {
+    "productivityScore": "Productivity Score",
+    "stats": "Overall Stats",
+    "todayTasks": "Today's Tasks",
+    "quickActions": "Quick Actions",
+    "pomodoro": "Pomodoro Timer",
+    "recentTasks": "Recent Tasks",
+    "upcomingDeadlines": "Upcoming Deadlines",
+    "notes": "Notes",
+    "projectProgress": "Project Progress",
+    "productivity": "Productivity Trend",
+    "tags": "Tags",
+    "financeBalance": "Finance Balance",
+    "monthlyBudget": "Monthly Budget",
+    "khums": "Khums",
+    "recentTransactions": "Recent Transactions"
+  }
+},
     "widgets": {
         "productivityScore": "Productivity Score",
         "productivityScoreDesc": "Daily score based on tasks, focus and streak",
@@ -476,77 +486,77 @@
         "title": "Finance",
         "subtitle": "Manage income, expenses, budgets and Islamic calculations",
         "reports": {
-      "title": "Financial Reports",
-      "subtitle": "Analyze income and expenses over time",
-      "filters": {
-        "title": "Filters",
-        "reset": "Clear",
-        "presetLabel": "Date Range",
-        "fromDate": "From Date",
-        "toDate": "To Date",
-        "type": "Type",
-        "account": "Account",
-        "allAccounts": "All Accounts",
-        "category": "Category",
-        "allCategories": "All Categories",
-        "presets": {
-          "today": "Today",
-          "thisWeek": "This Week",
-          "thisMonth": "This Month",
-          "lastMonth": "Last Month",
-          "last3Months": "Last 3 Months",
-          "thisYear": "This Year",
-          "custom": "Custom"
+            "title": "Financial Reports",
+            "subtitle": "Analyze income and expenses over time",
+            "filters": {
+                "title": "Filters",
+                "reset": "Clear",
+                "presetLabel": "Date Range",
+                "fromDate": "From Date",
+                "toDate": "To Date",
+                "type": "Type",
+                "account": "Account",
+                "allAccounts": "All Accounts",
+                "category": "Category",
+                "allCategories": "All Categories",
+                "presets": {
+                    "today": "Today",
+                    "thisWeek": "This Week",
+                    "thisMonth": "This Month",
+                    "lastMonth": "Last Month",
+                    "last3Months": "Last 3 Months",
+                    "thisYear": "This Year",
+                    "custom": "Custom"
+                },
+                "types": {
+                    "all": "All",
+                    "income": "Income",
+                    "expense": "Expense",
+                    "transfer": "Transfer"
+                }
+            },
+            "summary": {
+                "totalIncome": "Total Income",
+                "totalExpense": "Total Expense",
+                "net": "Net",
+                "count": "Transactions"
+            },
+            "categoryChart": {
+                "title": "Category Distribution",
+                "income": "Income",
+                "expense": "Expense",
+                "others": "Others",
+                "empty": "No transactions in this range"
+            },
+            "timelineChart": {
+                "title": "Timeline",
+                "income": "Income",
+                "expense": "Expense",
+                "daily": "Daily",
+                "monthly": "Monthly",
+                "empty": "No data to display"
+            },
+            "table": {
+                "title": "Transactions",
+                "date": "Date",
+                "description": "Description",
+                "category": "Category",
+                "account": "Account",
+                "amount": "Amount",
+                "noDescription": "No description",
+                "empty": "No transactions found"
+            },
+            "export": {
+                "button": "Export",
+                "csv": "📄 Excel / CSV",
+                "json": "🔧 JSON",
+                "empty": "No transactions to export",
+                "success": "File downloaded successfully"
+            }
         },
-        "types": {
-          "all": "All",
-          "income": "Income",
-          "expense": "Expense",
-          "transfer": "Transfer"
-        }
-      },
-      "summary": {
-        "totalIncome": "Total Income",
-        "totalExpense": "Total Expense",
-        "net": "Net",
-        "count": "Transactions"
-      },
-      "categoryChart": {
-        "title": "Category Distribution",
-        "income": "Income",
-        "expense": "Expense",
-        "others": "Others",
-        "empty": "No transactions in this range"
-      },
-      "timelineChart": {
-        "title": "Timeline",
-        "income": "Income",
-        "expense": "Expense",
-        "daily": "Daily",
-        "monthly": "Monthly",
-        "empty": "No data to display"
-      },
-      "table": {
-        "title": "Transactions",
-        "date": "Date",
-        "description": "Description",
-        "category": "Category",
-        "account": "Account",
-        "amount": "Amount",
-        "noDescription": "No description",
-        "empty": "No transactions found"
-      },
-      "export": {
-        "button": "Export",
-        "csv": "📄 Excel / CSV",
-        "json": "🔧 JSON",
-        "empty": "No transactions to export",
-        "success": "File downloaded successfully"
-      }
-    },
-    "settings": {
-      "categoriesTitle": "Category Management"
-    },
+        "settings": {
+            "categoriesTitle": "Category Management"
+        },
         "tabs": {
             "dashboard": "Dashboard",
             "transactions": "Transactions",
@@ -982,6 +992,7 @@
         "subtitle": "Manage application settings",
         "tabs": {
             "general": "General",
+            "sync": "Sync",
             "language": "Language",
             "notifications": "Notifications",
             "theme": "Appearance",

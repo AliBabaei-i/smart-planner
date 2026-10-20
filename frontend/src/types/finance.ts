@@ -1,20 +1,9 @@
-// ═══════════════════════════════════════════════
-// ✅ Typeهای ماژول Finance
-// ═══════════════════════════════════════════════
-
 import type { ID, ISODate, DateStr, TimeStr } from './common'
 
-// ✅ حساب‌ها
-export type AccountType =
-  | 'bank'
-  | 'cash'
-  | 'gold'
-  | 'silver'
-  | 'crypto'
-  | 'stock'
-  | 'property'
-  | 'other'
-
+// ═══════════════════════════════════════════════
+// ✅ حساب‌ها (Accounts)
+// ═══════════════════════════════════════════════
+export type AccountType = 'bank' | 'cash' | 'gold' | 'silver' | 'crypto' | 'stock' | 'property' | 'other'
 export type CurrencyCode = 'IRR' | 'IRT' | 'USD' | 'EUR' | 'GOLD_GRAM' | 'SILVER_GRAM'
 
 export interface Account {
@@ -30,7 +19,9 @@ export interface Account {
   deletedAt?: ISODate | null
 }
 
-// ✅ تراکنش‌ها
+// ═══════════════════════════════════════════════
+// ✅ تراکنش‌ها (Transactions)
+// ═══════════════════════════════════════════════
 export type TransactionType = 'income' | 'expense' | 'transfer'
 
 export interface Transaction {
@@ -57,7 +48,9 @@ export interface Transaction {
   deletedAt?: ISODate | null
 }
 
-// ✅ پلن‌ها (وام، بدهی، اقساط)
+// ═══════════════════════════════════════════════
+// ✅ پلن‌ها (Plans / Loans / Debts)
+// ═══════════════════════════════════════════════
 export type PlanType = 'debt' | 'credit' | 'loan' | 'installment'
 export type Periodicity = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -95,11 +88,13 @@ export interface PlanDue {
   paidAmount?: number
   transactionId?: ID | null
   notes?: string
-  createdAt?: ISODate     
+  createdAt?: ISODate
   updatedAt?: ISODate
 }
 
-// ✅ بودجه‌ها
+// ═══════════════════════════════════════════════
+// ✅ بودجه‌ها (Budgets)
+// ═══════════════════════════════════════════════
 export type BudgetPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 export interface Budget {
@@ -112,12 +107,14 @@ export interface Budget {
   endDate: DateStr
   rollover: boolean
   isActive: boolean
+  projectId?: ID | null 
   createdAt: ISODate
   updatedAt: ISODate
   deletedAt?: ISODate | null
 }
-
-// ✅ دسته‌بندی‌ها
+// ═══════════════════════════════════════════════
+// ✅ دسته‌بندی‌ها و تنظیمات (Categories & Settings)
+// ═══════════════════════════════════════════════
 export interface Category {
   id: string
   name: string
@@ -130,7 +127,6 @@ export interface Categories {
   expense: Category[]
 }
 
-// ✅ تنظیمات اسلامی
 export interface IslamicSettings {
   khumsYearStart: DateStr | null
   khumsCalculated: number
@@ -146,7 +142,6 @@ export interface IslamicSettings {
   warnOnInterest: boolean
 }
 
-// ✅ تنظیمات ارز
 export interface CurrencySettings {
   baseCurrency: CurrencyCode
   displayCurrency: CurrencyCode
@@ -154,7 +149,6 @@ export interface CurrencySettings {
   lastUpdated: ISODate
 }
 
-// ✅ تنظیمات کل ماژول
 export interface FinanceSettings {
   defaultAccountId: ID | null
   startOfWeek: number
@@ -162,7 +156,9 @@ export interface FinanceSettings {
   dateFormat: 'jalali' | 'gregorian'
 }
 
-// ✅ State کامل finance
+// ═══════════════════════════════════════════════
+// ✅ State و محاسبات (State & Calculations)
+// ═══════════════════════════════════════════════
 export interface FinanceState {
   accounts: Account[]
   transactions: Transaction[]
@@ -177,7 +173,6 @@ export interface FinanceState {
   error: string | null
 }
 
-// ✅ محاسبات
 export interface KhumsCalculation {
   surplus: number
   khums: number
@@ -211,7 +206,6 @@ export interface MonthlySummary {
   net: number
 }
 
-// ✅ APIهای بک‌اند
 export interface MarketPrices {
   gold18kRial: number
   silverRial: number

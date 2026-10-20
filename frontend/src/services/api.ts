@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════
-// ✅ API Client — fetch wrapper
+// ✅ API Client — fetch wrapper (Offline & Server-Down Aware)
 // ═══════════════════════════════════════════════
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
@@ -72,17 +72,36 @@ const forceLogout = (reason: string = 'Session expired'): void => {
   }, 100)
 }
 
-// ✅ Request Options (اضافه کردن _retry)
+// ✅ FIX: متغیرهای تشخیص سرور خاموش
+let isServerDown = false
+let serverDownTimeout: ReturnType<typeof setTimeout> | null = null
+
 export interface ApiRequestOptions extends RequestInit {
   _retry?: boolean
   body?: any
 }
 
-// ✅ Main Request Function
 let isRefreshing = false
 let refreshPromise: Promise<string> | null = null
 
 const request = async <T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> => {
+  
+  // ✅ FIX 1: چک کردن اینترنت (اگر کاربر آفلاین باشد)
+  if (!navigator.onLine) {
+    const offlineError: any = new Error('شما آفلاین هستید (Offline)')
+    offlineError.status = 0
+    offlineError.isOfflineError = true
+    throw offlineError
+  }
+
+  // ✅ FIX 2: چک کردن وضعیت سرور (اگر سرور اخیراً خاموش بوده)
+  if (isServerDown) {
+    const serverDownError: any = new Error('سرور در دسترس نیست (Server Down)')
+    serverDownError.status = 0
+    serverDownError.isServerDownError = true
+    throw serverDownError
+  }
+
   const url = `${API_URL}${endpoint}`
   const accessToken = getAccessToken()
 
@@ -99,7 +118,16 @@ const request = async <T = any>(endpoint: string, options: ApiRequestOptions = {
   try {
     const response = await fetch(url, config)
 
-    // ✅ 401 handling
+    // ✅ FIX 3: اگر پاسخ موفق بود، پرچم سرور خاموش را پاک کن
+    if (isServerDown) {
+      isServerDown = false
+      if (serverDownTimeout) {
+        clearTimeout(serverDownTimeout)
+        serverDownTimeout = null
+      }
+    }
+
+    // ✅ 401 handling (توکن منقضی شده)
     if (response.status === 401 && !options._retry) {
       let errorData: any = null
       try {
@@ -169,7 +197,17 @@ const request = async <T = any>(endpoint: string, options: ApiRequestOptions = {
 
     return data as T
   } catch (error: any) {
+    // ✅ FIX 4: اگر خطای شبکه (سرور خاموش یا قطع اینترنت) بود
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      isServerDown = true
+      
+      // بعد از ۱۰ ثانیه، پرچم را بردار تا دوباره تلاش کند
+      if (serverDownTimeout) clearTimeout(serverDownTimeout)
+      serverDownTimeout = setTimeout(() => {
+        isServerDown = false
+        serverDownTimeout = null
+      }, 10000)
+
       const netError: any = new Error('عدم اتصال به سرور')
       netError.status = 0
       netError.isNetworkError = true

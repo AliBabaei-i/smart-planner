@@ -3,8 +3,8 @@ import type { ID, ISODate, DateStr } from './common'
 export interface Journal {
   id: ID
   date: DateStr
-  mood: number
-  energy: number
+  mood: number // 1-5
+  energy: number // 1-5
   wins: string[]
   challenges: string[]
   reflection: string
@@ -17,7 +17,7 @@ export interface Journal {
 export interface SkillSession {
   id: ID
   date: DateStr
-  duration: number
+  duration: number // minutes
   notes: string
 }
 
@@ -26,8 +26,8 @@ export interface Skill {
   name: string
   description: string
   category: string
-  level: string
-  targetLevel: string
+  level: number // 1-5
+  targetLevel: number // 1-5
   color: string
   hours: number
   sessions: SkillSession[]

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════
-// ✅ Sync Service — مدیریت sync loop
+// ✅ Sync Service — مدیریت sync loop (Safe Version)
 // ═══════════════════════════════════════════════
 
 import { syncApi } from './syncApi'
@@ -85,6 +85,7 @@ class SyncService {
         this.notify({ status: 'syncing' })
 
         try {
+            // ✅ FIX 1: آیتم‌های داخل صف رو قبل از ارسال کپی می‌کنیم
             const queue = await syncQueue.getAll()
             const since = this.needsFullSync ? null : lastSync.get()
 
@@ -97,8 +98,23 @@ class SyncService {
             if (result.push) {
                 console.log(`✅ Push: ${result.push.applied} applied, ${result.push.conflicts} conflicts`)
 
-                if (!result.push.errors || result.push.errors.length === 0) {
-                    await syncQueue.clear()
+                // ✅ FIX 2: منطق ایمن برای پاک کردن صف
+                const { applied = 0, conflicts = 0, skipped = 0, errors = [] } = result.push
+                const processedCount = applied + conflicts + skipped + errors.length
+
+                if (queue.length > 0) {
+                    if (processedCount < queue.length) {
+                        // اگر سرور همه را پردازش نکرده، صف را پاک نکن
+                        throw new Error(`Server processed only ${processedCount}/${queue.length} items`)
+                    } else if (errors.length > 0) {
+                        // اگر حتی یک ارور وجود دارد، صف را نگه دار برای تلاش مجدد
+                        console.warn(`⚠️ ${errors.length} items failed. Keeping queue for retry.`)
+                        throw new Error('Partial sync error')
+                    } else {
+                        // همه چیز موفق بود، حالا صف را پاک کن
+                        await syncQueue.clear()
+                        console.log('🧹 Queue cleared safely')
+                    }
                 }
             }
 

@@ -1,10 +1,19 @@
+import type { ID, ISODate } from './common'
+
+export interface UserSettings {
+  theme?: string
+  language?: string
+  notifications?: boolean
+  [key: string]: any
+}
+
 export interface User {
-  id: string
+  id: ID
   email: string
   name: string
-  settings?: Record<string, any>
-  created_at?: string
-  last_login_at?: string
+  settings?: UserSettings
+  created_at?: ISODate
+  last_login_at?: ISODate
 }
 
 export interface AuthState {

@@ -1,7 +1,7 @@
-import type { ID, ISODate, DateStr, TimeStr } from './common'
+import type { ID, ISODate, DateStr } from './common'
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
-export type TaskStatus = 'todo' | 'in_progress' | 'completed'
+export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'cancelled'
 export type RecurringType = 'daily' | 'weekly' | 'monthly' | 'yearly' | null
 
 export interface Subtask {
@@ -19,7 +19,7 @@ export interface Task {
   priority: TaskPriority
   status: TaskStatus
   dueDate: DateStr | null
-  dueTime: TimeStr | null
+  dueTime: number | null // ✅ فیکس شد: عدد ۰ تا ۲۳ (نه رشته)
   timeEstimate: number | null
   actualTime: number
   completed: boolean
@@ -29,7 +29,7 @@ export interface Task {
   recurring: RecurringType
   recurringEndDate: DateStr | null
   parentTaskId: ID | null
-  // فیلدهای مرتبط با مالی
+  // ⭐ فیلدهای مرتبط با مالی
   financialCost?: number | null
   financialCategory?: string | null
   financialTransactionId?: ID | null

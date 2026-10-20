@@ -8,12 +8,11 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-  createMigrate, 
+  createMigrate,
 } from 'redux-persist'
 import persistStorage from './persistStorage'
 import { migrations } from './migrations'
 
-// ✅ همه‌ی Slices (اکثرا .ts شدن)
 import authReducer from '../features/auth/authSlice'
 import tasksReducer from '../features/tasks/tasksSlice'
 import projectsReducer from '../features/projects/projectsSlice'
@@ -28,6 +27,7 @@ import themeReducer from '../features/theme/themeSlice'
 import notificationsReducer from '../features/notifications/notificationsSlice'
 import financeReducer from '../features/finance/financeSlice'
 import syncReducer from '../features/sync/syncSlice'
+import rewardsReducer from '../features/rewards/rewardsSlice'
 
 import { syncMiddleware } from '../services/syncMiddleware'
 
@@ -46,6 +46,7 @@ const rootReducer = combineReducers({
   notifications: notificationsReducer,
   finance: financeReducer,
   sync: syncReducer,
+  rewards: rewardsReducer,
 })
 
 const persistConfig = {
@@ -55,7 +56,7 @@ const persistConfig = {
   whitelist: [
     'auth', 'tasks', 'sync', 'projects', 'habits', 'notes',
     'goals', 'growth', 'dashboard', 'achievements',
-    'theme', 'notifications', 'finance',
+    'theme', 'notifications', 'finance', 'rewards'
   ],
   blacklist: ['pomodoro'],
   migrate: createMigrate(migrations, { debug: import.meta.env.DEV }),

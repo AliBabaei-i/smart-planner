@@ -1,4 +1,4 @@
-import type { ID, ISODate, DateStr } from './common'
+import type { ID, ISODate } from './common'
 
 export interface Habit {
   id: ID
