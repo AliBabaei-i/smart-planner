@@ -279,7 +279,7 @@ const NoteForm = ({ note = null, onClose }) => {
 
                 {/* تگ‌ها */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
                         <FiTag size={14} />
                         <span>{t('notes.form.tags')}</span>
                     </label>

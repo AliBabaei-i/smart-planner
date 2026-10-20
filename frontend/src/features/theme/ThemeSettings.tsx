@@ -14,14 +14,11 @@ import {
   type ThemeMode,
 } from './themeSlice'
 
-// ═══════════════════════════════════════════════
-// ✅ ThemeEffects: اعمال زنده تم و رنگ‌ها روی DOM
-// باید یک بار در App.jsx یا Layout رندر شود.
-// ═══════════════════════════════════════════════
 export function ThemeEffects() {
   const mode = useSelector(selectThemeMode)
   const primaryColor = useSelector(selectPrimaryColor)
 
+  // ✅ اعمال حالت تاریک/روشن
   useEffect(() => {
     const root = document.documentElement
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -39,20 +36,26 @@ export function ThemeEffects() {
     return () => media.removeEventListener('change', applyMode)
   }, [mode])
 
+  // ✅ اعمال رنگ اصلی + آپدیت داینامیک متا تگ PWA
   useEffect(() => {
     const root = document.documentElement
     const preset = PRIMARY_PRESETS[primaryColor] || PRIMARY_PRESETS.blue
+    
+    // 1. تغییر متغیرهای CSS
     Object.entries(preset.shades).forEach(([shade, rgb]) => {
       root.style.setProperty(`--primary-${shade}`, rgb)
     })
+
+    // 2. تغییر رنگ نوار وضعیت PWA (Status Bar)
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', `rgb(${preset.shades[500]})`)
+    }
   }, [primaryColor])
 
   return null
 }
 
-// ═══════════════════════════════════════════════
-// ✅ ThemeSettings: رابط کاربری تنظیمات ظاهر
-// ═══════════════════════════════════════════════
 export default function ThemeSettings() {
   const { t, i18n } = useTranslation()
   const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
@@ -61,19 +64,16 @@ export default function ThemeSettings() {
   const mode = useSelector(selectThemeMode)
   const primaryColor = useSelector(selectPrimaryColor)
 
-  // لیست حالت‌های نمایش
   const MODES: { id: ThemeMode; icon: any; labelFa: string; labelEn: string }[] = [
     { id: 'light', icon: FiSun, labelFa: 'روشن', labelEn: 'Light' },
     { id: 'dark', icon: FiMoon, labelFa: 'تاریک', labelEn: 'Dark' },
     { id: 'system', icon: FiMonitor, labelFa: 'سیستم', labelEn: 'System' },
   ]
 
-  // لیست رنگ‌های موجود از themeSlice
   const COLOR_IDS = Object.keys(PRIMARY_PRESETS) as PrimaryColorId[]
 
   return (
     <Card className="p-6 space-y-8">
-      {/* هدر */}
       <div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
           {isPersian ? 'ظاهر برنامه' : 'Appearance'}
@@ -83,7 +83,6 @@ export default function ThemeSettings() {
         </p>
       </div>
 
-      {/* حالت نمایش */}
       <div>
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           {isPersian ? 'حالت نمایش' : 'Display Mode'}
@@ -113,7 +112,6 @@ export default function ThemeSettings() {
         </div>
       </div>
 
-      {/* رنگ اصلی */}
       <div>
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           {isPersian ? 'رنگ اصلی' : 'Primary Color'}
@@ -147,7 +145,6 @@ export default function ThemeSettings() {
         </div>
       </div>
 
-      {/* پیش‌نمایش */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -162,7 +159,6 @@ export default function ThemeSettings() {
         </div>
       </div>
 
-      {/* بازنشانی */}
       <div className="pt-2">
         <button
           type="button"

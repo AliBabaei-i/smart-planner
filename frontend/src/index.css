@@ -363,3 +363,65 @@ button,
   h2 { font-size: 1.25rem; }
   h3 { font-size: 1.125rem; }
 }
+
+/* ✅ Dashboard resize handles */
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item.resizing {
+  z-index: 30;
+  opacity: 0.9;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(59, 130, 246, 0.18);
+  border: 2px dashed rgb(59 130 246);
+  border-radius: 12px;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+.react-grid-item > .react-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.react-grid-item:hover > .react-resizable-handle,
+.react-grid-item.resizing > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-resizable-handle {
+  background-image: none;
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  z-index: 20;
+  cursor: nwse-resize;
+}
+
+.react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-color: rgb(59 130 246);
+}
+
+/* گوشه‌ها */
+.react-resizable-handle-se { bottom: 0; right: 0; cursor: nwse-resize; }
+.react-resizable-handle-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+.react-resizable-handle-ne { top: 0; right: 0; cursor: nesw-resize; }
+.react-resizable-handle-nw { top: 0; left: 0; cursor: nwse-resize; }
+
+/* لبه‌ها */
+.react-resizable-handle-e { right: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 40%; cursor: ew-resize; }
+.react-resizable-handle-w { left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 40%; cursor: ew-resize; }
+.react-resizable-handle-s { bottom: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 6px; cursor: ns-resize; }
+.react-resizable-handle-n { top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 6px; cursor: ns-resize; }

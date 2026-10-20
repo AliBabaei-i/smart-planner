@@ -9,7 +9,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      // ✅ PWA Configuration
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
@@ -17,7 +16,7 @@ export default defineConfig(({ mode }) => {
           name: 'Smart Planner',
           short_name: 'Planner',
           description: 'برنامه‌ریزی هوشمند - مدیریت کارها، پروژه‌ها و مالی',
-          theme_color: '#10b981', // رنگ سبز (emerald)
+          theme_color: '#3b82f6', // ✅ رنگ آبی پیش‌فرض
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
@@ -46,20 +45,32 @@ export default defineConfig(({ mode }) => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
           runtimeCaching: [
             {
-              // ✅ کش کردن Google Fonts
+              // ✅ استراتژی NetworkFirst برای API ها
+              // اگر آفلاین بودی، آخرین دیتا از کش خونده میشه
+              urlPattern: /\/api\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24 // 1 روز
+                },
+                networkTimeoutSeconds: 10 // اگر اینترنت کند بود، ۱۰ ثانیه صبر میکنه
+              }
+            },
+            {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
               options: {
                 cacheName: 'google-fonts-cache',
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                  maxAgeSeconds: 60 * 60 * 24 * 365
                 },
                 cacheableResponse: { statuses: [0, 200] }
               }
             },
             {
-              // ✅ کش کردن Google Fonts static
               urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
               handler: 'CacheFirst',
               options: {
@@ -74,7 +85,7 @@ export default defineConfig(({ mode }) => {
           ]
         },
         devOptions: {
-          enabled: true, // ✅ فعال بودن PWA در حالت dev
+          enabled: true,
           type: 'module'
         }
       })
@@ -87,7 +98,6 @@ export default defineConfig(({ mode }) => {
       dedupe: ['react', 'react-dom']
     },
     
-    // ✅ مهم برای Capacitor — مسیر نسبی
     base: isMobile ? './' : '/',
     
     server: {
@@ -110,7 +120,6 @@ export default defineConfig(({ mode }) => {
       target: 'es2020',
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1000,
-      
       rollupOptions: {
         output: {
           manualChunks: {

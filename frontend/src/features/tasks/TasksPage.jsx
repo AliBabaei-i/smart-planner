@@ -33,7 +33,7 @@ import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TaskForm from './TaskForm'
-import TaskDetailsModal from './TaskDetailsModal'
+import TaskDetailsModal from './TaskDetailsModal.t/sx'
 import TagBadge from './TagBadge'
 import TimeTracker from '../tracking/TimeTracker'
 import KanbanBoard from './KanbanBoard'
@@ -41,10 +41,10 @@ import { formatTimeByLang, formatDateByLang } from '../../utils/formatters'
 import { PRIORITIES } from '../../constants/priorities'
 
 // ✅ کامپوننت TaskCard جدا + memo شده
-const TaskCard = memo(({ 
-  task, 
-  project, 
-  priorityInfo, 
+const TaskCard = memo(({
+  task,
+  project,
+  priorityInfo,
   subtaskProgress,
   t,
   onToggle,
@@ -68,15 +68,14 @@ const TaskCard = memo(({
               <FiCircle size={22} className="text-gray-400 hover:text-blue-500" />
             )}
           </button>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span 
-                className={`font-medium text-lg cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                  task.completed 
-                    ? 'line-through text-gray-400 dark:text-gray-500' 
+              <span
+                className={`font-medium text-lg cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${task.completed
+                    ? 'line-through text-gray-400 dark:text-gray-500'
                     : 'text-gray-900 dark:text-white'
-                }`}
+                  }`}
                 onClick={() => onViewDetails(task)}
               >
                 {task.title}
@@ -103,7 +102,7 @@ const TaskCard = memo(({
                 </span>
               )}
             </div>
-            
+
             {task.description && (
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
                 {task.description}
@@ -113,8 +112,8 @@ const TaskCard = memo(({
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {task.tags.map(tag => (
-                  <TagBadge 
-                    key={tag} 
+                  <TagBadge
+                    key={tag}
                     tag={tag}
                     clickable
                     onClick={() => onTagClick(tag)}
@@ -131,11 +130,10 @@ const TaskCard = memo(({
                     <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                       {t('tasks.form.subtasks')}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      subtaskProgress.percentage === 100 
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${subtaskProgress.percentage === 100
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                    }`}>
+                      }`}>
                       {subtaskProgress.completed}/{subtaskProgress.total}
                     </span>
                   </div>
@@ -143,14 +141,13 @@ const TaskCard = memo(({
                     {subtaskProgress.percentage}%
                   </span>
                 </div>
-                
+
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
-                  <div 
-                    className={`h-1.5 rounded-full transition-all ${
-                      subtaskProgress.percentage === 100 
-                        ? 'bg-green-500' 
+                  <div
+                    className={`h-1.5 rounded-full transition-all ${subtaskProgress.percentage === 100
+                        ? 'bg-green-500'
                         : 'bg-gradient-to-l from-green-500 to-blue-500'
-                    }`}
+                      }`}
                     style={{ width: `${subtaskProgress.percentage}%` }}
                   ></div>
                 </div>
@@ -163,11 +160,10 @@ const TaskCard = memo(({
                       ) : (
                         <FiCircle size={12} className="text-gray-400 flex-shrink-0" />
                       )}
-                      <span className={`truncate ${
-                        subtask.completed 
-                          ? 'line-through text-gray-400 dark:text-gray-500' 
+                      <span className={`truncate ${subtask.completed
+                          ? 'line-through text-gray-400 dark:text-gray-500'
                           : 'text-gray-600 dark:text-gray-400'
-                      }`}>
+                        }`}>
                         {subtask.title}
                       </span>
                     </div>
@@ -183,13 +179,13 @@ const TaskCard = memo(({
 
             <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap mt-2">
               <div className="flex items-center gap-1">
-                <div 
+                <div
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: project?.color || '#6b7280' }}
                 ></div>
                 <span>{project?.name || t('tasks.form.selectProject')}</span>
               </div>
-              
+
               {task.dueDate && (
                 <span className="flex items-center gap-1">
                   <FiCalendar size={12} />
@@ -203,7 +199,7 @@ const TaskCard = memo(({
                   <span>{task.dueTime.toString().padStart(2, '0')}:۰۰</span>
                 </span>
               )}
-              
+
               {task.actualTime > 0 && (
                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                   <FiCheckCircle size={12} />
@@ -213,7 +209,7 @@ const TaskCard = memo(({
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={() => onViewDetails(task)}
@@ -256,20 +252,20 @@ const TasksPage = () => {
   const { tasks = [], availableTags = [] } = useSelector(state => state.tasks)
   const { projects = [] } = useSelector(state => state.projects)
   const { accounts = [], transactions = [] } = useSelector(state => state.finance || {})
-  
+
   // ✅ isPersian تعریف شد
   const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
-  
+
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [showTimeTracker, setShowTimeTracker] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [detailsTask, setDetailsTask] = useState(null)
   const [showDetails, setShowDetails] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState({ 
-    isOpen: false, 
-    taskId: null, 
-    taskTitle: '' 
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    isOpen: false,
+    taskId: null,
+    taskTitle: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -299,7 +295,7 @@ const TasksPage = () => {
 
   // ✅ useMemo: sorted tags
   const sortedTags = useMemo(() => {
-    return [...availableTags].sort((a, b) => 
+    return [...availableTags].sort((a, b) =>
       (tagCounts.get(b) || 0) - (tagCounts.get(a) || 0)
     )
   }, [availableTags, tagCounts])
@@ -307,7 +303,7 @@ const TasksPage = () => {
   // ✅ useMemo: filtered tasks
   const filteredTasks = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase().trim()
-    
+
     return tasks.filter(task => {
       if (lowerSearch) {
         const titleMatch = task.title?.toLowerCase().includes(lowerSearch)
@@ -315,14 +311,14 @@ const TasksPage = () => {
         const tagMatch = task.tags?.some(tag => tag.toLowerCase().includes(lowerSearch))
         if (!titleMatch && !descMatch && !tagMatch) return false
       }
-      
+
       if (filterStatus === 'completed' && !task.completed) return false
       if (filterStatus === 'pending' && task.completed) return false
-      
+
       if (filterProject !== 'all' && task.projectId !== filterProject) return false
-      
+
       if (filterTag !== 'all' && (!task.tags || !task.tags.includes(filterTag))) return false
-      
+
       return true
     })
   }, [tasks, searchTerm, filterStatus, filterProject, filterTag])
@@ -342,17 +338,17 @@ const TasksPage = () => {
     // ✅ ۲. اگه تسک انجام شد و هزینه مالی داره
     if (willBeCompleted && task.financialCost && task.financialCost > 0) {
       // چک کن قبلاً تراکنش ثبت نشده باشه
-      const alreadyLinked = task.financialTransactionId || 
+      const alreadyLinked = task.financialTransactionId ||
         transactions.some(t => t.taskId === task.id && t.type === 'expense')
 
       if (!alreadyLinked) {
         // از اولین حساب فعال یا حساب پیش‌فرض
-        const defaultAccount = accounts.find(a => a.isActive && a.currency === 'IRR') 
-                            || accounts.find(a => a.isActive)
+        const defaultAccount = accounts.find(a => a.isActive && a.currency === 'IRR')
+          || accounts.find(a => a.isActive)
 
         if (defaultAccount) {
           const transactionId = uuidv4()
-          
+
           dispatch(addTransaction({
             id: transactionId,
             accountId: defaultAccount.id,
@@ -360,25 +356,25 @@ const TasksPage = () => {
             amount: task.financialCost,
             currency: 'IRR',
             category: task.financialCategory || 'other_expense',
-            description: isPersian 
+            description: isPersian
               ? `هزینه کار: ${task.title}`
               : `Task cost: ${task.title}`,
             date: getTodayStr(),
             taskId: task.id,
             projectId: task.projectId
           }))
-          
+
           dispatch(linkTransactionToTask({ taskId: task.id, transactionId }))
-          
+
           toast.info(
-            isPersian 
+            isPersian
               ? `💰 هزینه ${task.financialCost.toLocaleString('fa-IR')} ریال ثبت شد`
               : `💰 Expense recorded: ${task.financialCost}`,
             { position: 'bottom-left', autoClose: 3000 }
           )
         } else {
           toast.warning(
-            isPersian 
+            isPersian
               ? '⚠️ برای ثبت خودکار هزینه، ابتدا یک حساب فعال بساز'
               : '⚠️ Create an active account to auto-record expenses',
             { position: 'bottom-left', autoClose: 4000 }
@@ -431,7 +427,7 @@ const TasksPage = () => {
       autoClose: 3000,
     })
     setDeleteConfirm({ isOpen: false, taskId: null, taskTitle: '' })
-    
+
     if (showDetails && detailsTask?.id === deleteConfirm.taskId) {
       setShowDetails(false)
       setDetailsTask(null)
@@ -478,27 +474,25 @@ const TasksPage = () => {
             {t('tasks.subtitle')}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 ${
-                viewMode === 'list'
+              className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 ${viewMode === 'list'
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               <FiList size={16} />
               <span className="hidden sm:inline">{t('kanban.listView')}</span>
             </button>
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 border-s border-gray-300 dark:border-gray-600 ${
-                viewMode === 'kanban'
+              className={`px-3 py-2 transition-colors text-sm flex items-center gap-1.5 border-s border-gray-300 dark:border-gray-600 ${viewMode === 'kanban'
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               <FiColumns size={16} />
               <span className="hidden sm:inline">{t('kanban.kanbanView')}</span>
@@ -517,8 +511,8 @@ const TasksPage = () => {
         <div className="space-y-4">
           <div className="flex gap-2">
             <div className="flex-1 relative">
-              <FiSearch 
-                size={16} 
+              <FiSearch
+                size={16}
                 className="absolute end-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
               />
               <Input
@@ -625,9 +619,8 @@ const TasksPage = () => {
               <button
                 key={tag}
                 onClick={() => setFilterTag(filterTag === tag ? 'all' : tag)}
-                className={`transition-transform hover:scale-105 ${
-                  filterTag === tag ? 'ring-2 ring-blue-500 rounded-md' : ''
-                }`}
+                className={`transition-transform hover:scale-105 ${filterTag === tag ? 'ring-2 ring-blue-500 rounded-md' : ''
+                  }`}
               >
                 <TagBadge tag={tag} />
               </button>
@@ -642,7 +635,7 @@ const TasksPage = () => {
       )}
 
       {viewMode === 'kanban' ? (
-        <KanbanBoard 
+        <KanbanBoard
           onEditTask={handleEdit}
           onViewDetails={handleViewDetails}
           filteredTasks={filteredTasks}
@@ -720,7 +713,7 @@ const TasksPage = () => {
         title={t('pomodoro.title')}
       >
         {selectedTask && (
-          <TimeTracker 
+          <TimeTracker
             taskId={selectedTask.id}
             onClose={() => {
               setShowTimeTracker(false)

@@ -1,16 +1,31 @@
-import React, { useEffect, lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import React, { useEffect, lazy, Suspense, useState } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import type { AppDispatch } from './app/store' // ✅ اضافه شد برای رفع خطای TS
+import { AnimatePresence } from 'framer-motion'
+import type { AppDispatch } from './app/store'
 import { checkAuth, selectIsAuthenticated } from './features/auth/authSlice'
 import { generateRecurringTasks } from './features/tasks/tasksSlice'
 import { ThemeEffects } from './features/theme/ThemeSettings'
 import { syncService } from './services/syncService'
-import ErrorBoundary from './components/common/ErrorBoundary'
-import ProtectedRoute from './features/auth/ProtectedRoute'
 import { initializeTheme } from './features/theme/themeSlice'
 
-// ✅ Lazy load همه‌ی صفحات
+import ErrorBoundary from './components/common/ErrorBoundary'
+import ProtectedRoute from './features/auth/ProtectedRoute'
+import InstallPrompt from './components/common/InstallPrompt'
+import PageTransition from './components/common/PageTransition'
+
+// ✅ shell اصلی — eager import (نه lazy) چون کل layout است
+import AppLayout from './components/layout/AppLayout'
+
+// ✅ مودال‌های سراسری
+import GlobalSearch from './components/common/GlobalSearch'
+import QuickAddTask from './components/ui/QuickAddTask'
+
+// ✅ اسکلت‌های اختصاصی
+import AnalyticsSkeleton from './features/analytics/AnalyticsSkeleton'
+import FinanceReportsSkeleton from './features/finance/FinanceReportsSkeleton'
+
+// ✅ صفحات (lazy)
 const LoginPage = lazy(() => import('./features/auth/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'))
@@ -25,8 +40,8 @@ const PlanningPage = lazy(() => import('./features/planning/PlanningPage'))
 const AnalyticsPage = lazy(() => import('./features/analytics/AnalyticsPage'))
 const AchievementsPage = lazy(() => import('./features/achievements/AchievementsPage'))
 const FinancePage = lazy(() => import('./features/finance/FinancePage'))
+const RewardsPage = lazy(() => import('./features/rewards/RewardsPage'))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
-const AppLayout = lazy(() => import('./components/layout/AppLayout'))
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-screen">
@@ -34,64 +49,207 @@ const LoadingFallback = () => (
   </div>
 )
 
+// ✅ helper برای Suspense با اسکلت اختصاصی
+const WithSkeleton: React.FC<{
+  skeleton: React.ReactNode
+  children: React.ReactNode
+}> = ({ skeleton, children }) => <Suspense fallback={skeleton}>{children}</Suspense>
+
 function AppContent() {
-  // ✅ استفاده از AppDispatch برای رفع خطای AsyncThunkAction
   const dispatch = useDispatch<AppDispatch>()
   const isAuthenticated = useSelector(selectIsAuthenticated)
+  const location = useLocation()
 
-  // ✅ Bootstrap: check auth + theme + recurring tasks
+  const [showSearch, setShowSearch] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+
   useEffect(() => {
     initializeTheme()
     dispatch(checkAuth())
     dispatch(generateRecurringTasks())
   }, [dispatch])
 
-  // ✅ Start/stop sync service based on auth
   useEffect(() => {
-    if (isAuthenticated) {
-      syncService.start()
-    } else {
+    if (isAuthenticated) syncService.start()
+    else syncService.stop()
+    return () => {
       syncService.stop()
-    }
-    return () => { 
-      syncService.stop() 
     }
   }, [isAuthenticated])
 
   return (
     <>
       <ThemeEffects />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="habits" element={<HabitsPage />} />
-          <Route path="notes" element={<NotesPage />} />
-          <Route path="goals" element={<GoalsPage />} />
-          <Route path="growth" element={<GrowthPage />} />
-          <Route path="planning" element={<PlanningPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="achievements" element={<AchievementsPage />} />
-          <Route path="finance" element={<FinancePage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
+      <Suspense fallback={<LoadingFallback />}>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            {/* Public */}
+            <Route
+              path="/login"
+              element={
+                <PageTransition>
+                  <LoginPage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PageTransition>
+                  <ForgotPasswordPage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PageTransition>
+                  <ResetPasswordPage />
+                </PageTransition>
+              }
+            />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* Protected — AppLayout با props */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout
+                    onOpenSearch={() => setShowSearch(true)}
+                    onOpenQuickAdd={() => setShowQuickAdd(true)}
+                  />
+                </ProtectedRoute>
+              }
+            >
+              <Route
+                index
+                element={
+                  <PageTransition>
+                    <Dashboard />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="projects"
+                element={
+                  <PageTransition>
+                    <ProjectsPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="tasks"
+                element={
+                  <PageTransition>
+                    <TasksPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="habits"
+                element={
+                  <PageTransition>
+                    <HabitsPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="notes"
+                element={
+                  <PageTransition>
+                    <NotesPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="goals"
+                element={
+                  <PageTransition>
+                    <GoalsPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="growth"
+                element={
+                  <PageTransition>
+                    <GrowthPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="planning"
+                element={
+                  <PageTransition>
+                    <PlanningPage />
+                  </PageTransition>
+                }
+              />
+
+              <Route
+                path="analytics"
+                element={
+                  <PageTransition>
+                    <WithSkeleton skeleton={<AnalyticsSkeleton />}>
+                      <AnalyticsPage />
+                    </WithSkeleton>
+                  </PageTransition>
+                }
+              />
+
+              <Route
+                path="achievements"
+                element={
+                  <PageTransition>
+                    <AchievementsPage />
+                  </PageTransition>
+                }
+              />
+
+              <Route
+                path="finance"
+                element={
+                  <PageTransition>
+                    <WithSkeleton skeleton={<FinanceReportsSkeleton />}>
+                      <FinancePage />
+                    </WithSkeleton>
+                  </PageTransition>
+                }
+              />
+
+              <Route
+                path="rewards"
+                element={
+                  <PageTransition>
+                    <RewardsPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <PageTransition>
+                    <SettingsPage />
+                  </PageTransition>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </Suspense>
+
+      <InstallPrompt />
+
+      {/* ✅ مودال‌های سراسری — فقط بعد از auth */}
+      {isAuthenticated && (
+        <>
+          <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
+          <QuickAddTask isOpen={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
+        </>
+      )}
     </>
   )
 }
@@ -99,9 +257,7 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<LoadingFallback />}>
-        <AppContent />
-      </Suspense>
+      <AppContent />
     </ErrorBoundary>
   )
 }
