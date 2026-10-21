@@ -1,6 +1,5 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
-
 // ✅ همه‌ی انواع قبلی + جدید
 export type NotificationType =
   | 'task_due'
@@ -182,18 +181,23 @@ export const {
 // ✅ Selectors — سازگار با state قدیمی
 // ═══════════════════════════════════════════════
 
-export const selectAllNotifications = (state: any): AppNotification[] =>
-  (state.notifications?.notifications || []).filter(
-    (n: AppNotification) => !n.dismissed
-  )
+const selectNotificationsArray = (state: any): AppNotification[] =>
+  state.notifications?.notifications || []
 
-export const selectUnreadCount = (state: any): number =>
-  (state.notifications?.notifications || []).filter(
-    (n: AppNotification) => !n.read && !n.dismissed
-  ).length
+export const selectAllNotifications = createSelector(
+  [selectNotificationsArray],
+  (notifications): AppNotification[] =>
+    notifications.filter((n) => !n.dismissed)
+)
 
-export const selectNotificationSettings = (
-  state: any
-): NotificationsSettings => state.notifications?.settings || initialState.settings
+export const selectUnreadCount = createSelector(
+  [selectNotificationsArray],
+  (notifications): number =>
+    notifications.filter((n) => !n.read && !n.dismissed).length
+)
 
+export const selectNotificationSettings = createSelector(
+  [(state: any) => state.notifications?.settings],
+  (settings) => settings || {}
+)
 export default notificationsSlice.reducer

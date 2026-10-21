@@ -14,24 +14,21 @@ import { syncService } from './services/syncService'
 import { ThemeEffects } from './features/theme/ThemeSettings'
 import { initializeTheme } from './features/theme/themeSlice'
 
-// ─── Core Components ───
+// ─── Core ───
 import ErrorBoundary from './components/common/ErrorBoundary'
 import ProtectedRoute from './features/auth/ProtectedRoute'
 import InstallPrompt from './components/common/InstallPrompt'
 import PageTransition from './components/common/PageTransition'
 import GlobalSearch from './components/common/GlobalSearch'
 import QuickAddTask from './components/ui/QuickAddTask'
-
-// ─── Layout (eager، نه lazy) ───
 import AppLayout from './components/layout/AppLayout'
 
 // ─── Skeletons ───
 import AnalyticsSkeleton from './features/analytics/AnalyticsSkeleton'
 import FinanceReportsSkeleton from './features/finance/FinanceReportsSkeleton'
 
-// ─── Hooks ───
+// ─── Hook ───
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
-import NotificationsPage from './features/notifications/NotificationsPage'
 
 // ─── Pages (lazy) ───
 const LoginPage = lazy(() => import('./features/auth/LoginPage'))
@@ -50,23 +47,19 @@ const AchievementsPage = lazy(() => import('./features/achievements/Achievements
 const FinancePage = lazy(() => import('./features/finance/FinancePage'))
 const RewardsPage = lazy(() => import('./features/rewards/RewardsPage'))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'))
+const NotificationsPage = lazy(() => import('./features/notifications/NotificationsPage'))
 
-// ─── Fallback ───
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-screen">
     <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
   </div>
 )
 
-// ─── Helper: Suspense با اسکلت اختصاصی ───
 const WithSkeleton: React.FC<{
   skeleton: React.ReactNode
   children: React.ReactNode
 }> = ({ skeleton, children }) => <Suspense fallback={skeleton}>{children}</Suspense>
 
-// ═══════════════════════════════════════════════
-// AppContent
-// ═══════════════════════════════════════════════
 function AppContent() {
   const dispatch = useDispatch<AppDispatch>()
   const isAuthenticated = useSelector(selectIsAuthenticated)
@@ -82,18 +75,12 @@ function AppContent() {
     dispatch(generateRecurringTasks())
   }, [dispatch])
 
-  // ✅ بازمحاسبه‌ی موجودی‌ها بعد از persist
+  // ✅ بازمحاسبه‌ی موجودی‌ها (fix باگ جمع/کسر معکوس)
   useEffect(() => {
-    // یک‌بار در startup
     dispatch(recalculateBalances())
-
-    // بعد از هر sync موفق
     const unsubscribe = syncService.subscribe((event: any) => {
-      if (event?.status === 'synced') {
-        dispatch(recalculateBalances())
-      }
+      if (event?.status === 'synced') dispatch(recalculateBalances())
     })
-
     return unsubscribe
   }, [dispatch])
 
@@ -106,7 +93,7 @@ function AppContent() {
     }
   }, [isAuthenticated])
 
-  // ✅ کلیدهای میان‌بر
+  // ✅ میان‌برها
   const handleOpenSearch = useCallback(() => setShowSearch(true), [])
   const handleOpenQuickAdd = useCallback(() => setShowQuickAdd(true), [])
 
@@ -122,33 +109,12 @@ function AppContent() {
       <Suspense fallback={<LoadingFallback />}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            {/* ─── Public ─── */}
-            <Route
-              path="/login"
-              element={
-                <PageTransition>
-                  <LoginPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                <PageTransition>
-                  <ForgotPasswordPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/reset-password"
-              element={
-                <PageTransition>
-                  <ResetPasswordPage />
-                </PageTransition>
-              }
-            />
+            {/* ═══ Public — بدون layout ═══ */}
+            <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+            <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
+            <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
 
-            {/* ─── Protected ─── */}
+            {/* ═══ Protected — همه‌چیز داخل AppLayout ═══ */}
             <Route
               path="/"
               element={
@@ -160,72 +126,15 @@ function AppContent() {
                 </ProtectedRoute>
               }
             >
-              <Route
-                index
-                element={
-                  <PageTransition>
-                    <Dashboard />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="projects"
-                element={
-                  <PageTransition>
-                    <ProjectsPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="tasks"
-                element={
-                  <PageTransition>
-                    <TasksPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="habits"
-                element={
-                  <PageTransition>
-                    <HabitsPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="notes"
-                element={
-                  <PageTransition>
-                    <NotesPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="goals"
-                element={
-                  <PageTransition>
-                    <GoalsPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="growth"
-                element={
-                  <PageTransition>
-                    <GrowthPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="planning"
-                element={
-                  <PageTransition>
-                    <PlanningPage />
-                  </PageTransition>
-                }
-              />
+              <Route index element={<PageTransition><Dashboard /></PageTransition>} />
+              <Route path="projects" element={<PageTransition><ProjectsPage /></PageTransition>} />
+              <Route path="tasks" element={<PageTransition><TasksPage /></PageTransition>} />
+              <Route path="habits" element={<PageTransition><HabitsPage /></PageTransition>} />
+              <Route path="notes" element={<PageTransition><NotesPage /></PageTransition>} />
+              <Route path="goals" element={<PageTransition><GoalsPage /></PageTransition>} />
+              <Route path="growth" element={<PageTransition><GrowthPage /></PageTransition>} />
+              <Route path="planning" element={<PageTransition><PlanningPage /></PageTransition>} />
 
-              {/* Analytics — اسکلت اختصاصی */}
               <Route
                 path="analytics"
                 element={
@@ -237,16 +146,8 @@ function AppContent() {
                 }
               />
 
-              <Route
-                path="achievements"
-                element={
-                  <PageTransition>
-                    <AchievementsPage />
-                  </PageTransition>
-                }
-              />
+              <Route path="achievements" element={<PageTransition><AchievementsPage /></PageTransition>} />
 
-              {/* Finance — اسکلت اختصاصی */}
               <Route
                 path="finance"
                 element={
@@ -258,32 +159,12 @@ function AppContent() {
                 }
               />
 
-              <Route
-                path="rewards"
-                element={
-                  <PageTransition>
-                    <RewardsPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <PageTransition>
-                    <SettingsPage />
-                  </PageTransition>
-                }
-              />
+              <Route path="rewards" element={<PageTransition><RewardsPage /></PageTransition>} />
+              {/* ✅ اینجا داخل layout است، نه بیرون */}
+              <Route path="notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
+              <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
             </Route>
-            <Route
-  path="notifications"
-  element={
-    <PageTransition>
-      <NotificationsPage />
-    </PageTransition>
-  }
-/>
-            {/* 404 */}
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
@@ -291,7 +172,7 @@ function AppContent() {
 
       <InstallPrompt />
 
-      {/* ─── مودال‌های سراسری (بعد از auth) ─── */}
+      {/* ═══ مودال‌های سراسری (بعد از auth) ═══ */}
       {isAuthenticated && (
         <>
           <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
@@ -302,9 +183,6 @@ function AppContent() {
   )
 }
 
-// ═══════════════════════════════════════════════
-// App
-// ═══════════════════════════════════════════════
 export default function App() {
   return (
     <ErrorBoundary>
