@@ -2,7 +2,7 @@ import React, { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiTrendingUp, FiTrendingDown, FiActivity, FiHash } from 'react-icons/fi'
 import Card from '../../components/ui/Card'
-import { formatCompact, formatNumber } from './currencyHelpers'
+import { formatCompact, formatNumber, CURRENCY_META } from './currencyHelpers';
 import type { Transaction } from '../../types/finance'
 
 interface ReportSummaryProps {
@@ -66,7 +66,8 @@ const ReportSummary = memo(({ transactions = [], currency = 'IRR' }: ReportSumma
             </div>
 
             {!card.isCount && (
-              <div className="text-[10px] text-gray-400 mt-0.5">{currency === 'IRR' ? (isPersian ? 'ریال' : 'IRR') : currency}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+{CURRENCY_META[currency]?.label || currency}</div>
             )}
           </Card>
         )

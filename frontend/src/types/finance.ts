@@ -129,6 +129,7 @@ export interface Categories {
 
 export interface IslamicSettings {
   khumsYearStart: DateStr | null
+  khumsYearMonthDay?: string | null
   khumsCalculated: number
   khumsPaid: number
   sahmImam: number

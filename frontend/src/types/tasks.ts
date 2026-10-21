@@ -1,7 +1,7 @@
 import type { ID, ISODate, DateStr } from './common'
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
-export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'cancelled'
+export type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'cancelled'
 export type RecurringType = 'daily' | 'weekly' | 'monthly' | 'yearly' | null
 
 export interface Subtask {

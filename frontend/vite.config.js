@@ -41,49 +41,57 @@ export default defineConfig(({ mode }) => {
             }
           ]
         },
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-          runtimeCaching: [
-            {
-              // ✅ استراتژی NetworkFirst برای API ها
-              // اگر آفلاین بودی، آخرین دیتا از کش خونده میشه
-              urlPattern: /\/api\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24 // 1 روز
-                },
-                networkTimeoutSeconds: 10 // اگر اینترنت کند بود، ۱۰ ثانیه صبر میکنه
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365
-                },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365
-                },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            }
-          ]
+       workbox: {
+  // ✅ فایل‌هایی که باید cache بشن
+  globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
+
+  // ✅ حیاتی: همه‌ی ناوبری‌های SPA به index.html برگردند
+  // بدون این خط، /tasks و /projects در حالت آفلاین کار نمی‌کنند
+  navigateFallback: '/index.html',
+
+  // ✅ اما API نباید به index.html برگردد
+  navigateFallbackDenylist: [/^\/api\//],
+
+  cleanupOutdatedCaches: true,
+  clientsClaim: true,
+  skipWaiting: true,
+
+  runtimeCaching: [
+    // ─── Auth endpoints: همیشه شبکه (login/reset نیاز به سرور زنده) ───
+    {
+      urlPattern: /\/api\/auth\/(signin|signup|refresh|forgot|reset).*/i,
+      handler: 'NetworkOnly',
+    },
+    // ─── بقیه API: اول شبکه، بعد کش ───
+    {
+      urlPattern: /\/api\/.*/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'api-cache',
+        networkTimeoutSeconds: 5,
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24, // 24 ساعت
         },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+    // ─── Google Fonts ───
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts',
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 سال
+        },
+      },
+    },
+  ],
+},
         devOptions: {
           enabled: true,
           type: 'module'

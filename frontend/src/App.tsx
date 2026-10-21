@@ -13,7 +13,7 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 import ProtectedRoute from './features/auth/ProtectedRoute'
 import InstallPrompt from './components/common/InstallPrompt'
 import PageTransition from './components/common/PageTransition'
-
+import { recalculateBalances } from './features/finance/financeSlice'
 // ✅ shell اصلی — eager import (نه lazy) چون کل layout است
 import AppLayout from './components/layout/AppLayout'
 
@@ -76,7 +76,20 @@ function AppContent() {
       syncService.stop()
     }
   }, [isAuthenticated])
+  // ✅ بازمحاسبه‌ی موجودی‌ها در startup و بعد از هر sync
+  useEffect(() => {
+    // یک‌بار در startup
+    dispatch(recalculateBalances())
 
+    // بعد از هر sync موفق
+    const unsubscribe = syncService.subscribe((event: any) => {
+      if (event.status === 'synced') {
+        dispatch(recalculateBalances())
+      }
+    })
+
+    return unsubscribe
+  }, [dispatch])
   return (
     <>
       <ThemeEffects />

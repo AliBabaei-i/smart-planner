@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiBarChart2 } from 'react-icons/fi'
+import { FiBarChart2, FiInfo } from 'react-icons/fi'
 import { useSelector } from 'react-redux'
 import Card from '../../components/ui/Card'
 import ReportFilters from './ReportFilters'
@@ -10,6 +10,7 @@ import ReportTimelineChart from './ReportTimelineChart'
 import ReportTable from './ReportTable'
 import ReportExportButton from './ReportExportButton'
 import { getLocalDateStr } from '../../utils/dateHelpers'
+import { convertCurrency, CURRENCY_META } from './currencyHelpers'
 import type { RootState } from '../../app/store'
 
 const getDefaultFilters = () => {
@@ -26,11 +27,20 @@ const getDefaultFilters = () => {
 }
 
 const FinanceReports = memo(() => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  // ✅ FIX: استفاده از RootState برای تایپ دقیق
   const finance = useSelector((state: RootState) => state.finance)
-  const { transactions = [], accounts = [], categories = { income: [], expense: [] } } = finance
+  const {
+    transactions = [],
+    accounts = [],
+    categories = { income: [], expense: [] },
+    currencySettings
+  } = finance
+
+  const rates = currencySettings?.rates || {}
+  const baseCurrency = currencySettings?.baseCurrency || 'IRR'
+  const baseCurrencyMeta = CURRENCY_META[baseCurrency] || CURRENCY_META.IRR
 
   const [filters, setFilters] = useState(getDefaultFilters)
 
@@ -42,6 +52,8 @@ const FinanceReports = memo(() => {
     setFilters(getDefaultFilters())
   }, [])
 
+  // ✅ مرحله ۱: فیلتر
+  // ✅ مرحله ۲: تبدیل همه به ارز پایه برای نمایش یکسان در گزارش
   const filteredTransactions = useMemo(() => {
     return transactions
       .filter(tx => {
@@ -58,11 +70,29 @@ const FinanceReports = memo(() => {
         }
         return true
       })
+      .map(tx => {
+        // ✅ حفظ مقادیر اصلی برای نمایش در جدول
+        const originalAmount = Number(tx.amount) || 0
+        const originalCurrency = tx.currency || 'IRR'
+        // ✅ تبدیل به ارز پایه
+        const convertedAmount =
+          originalCurrency === baseCurrency
+            ? originalAmount
+            : convertCurrency(originalAmount, originalCurrency, baseCurrency, rates)
+
+        return {
+          ...tx,
+          originalAmount,
+          originalCurrency,
+          amount: convertedAmount,
+          currency: baseCurrency,
+        }
+      })
       .sort((a, b) => {
         if (b.date !== a.date) return b.date.localeCompare(a.date)
         return (b.createdAt || '').localeCompare(a.createdAt || '')
       })
-  }, [transactions, filters])
+  }, [transactions, filters, baseCurrency, rates])
 
   return (
     <div className="space-y-5">
@@ -72,7 +102,9 @@ const FinanceReports = memo(() => {
             <FiBarChart2 size={18} className="text-emerald-600 dark:text-emerald-400" />
             {t('finance.reports.title')}
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('finance.reports.subtitle')}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {t('finance.reports.subtitle')}
+          </p>
         </div>
 
         <ReportExportButton
@@ -83,6 +115,16 @@ const FinanceReports = memo(() => {
         />
       </div>
 
+      {/* ✅ هشدار تبدیل ارز */}
+      <div className="flex items-start gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <FiInfo size={14} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
+          {isPersian
+            ? `همه مبالغ در این گزارش به «${baseCurrencyMeta.label}» تبدیل شده‌اند تا با هم قابل مقایسه باشند.`
+            : `All amounts are converted to ${baseCurrencyMeta.label} for comparison.`}
+        </p>
+      </div>
+
       <ReportFilters
         filters={filters}
         onChange={handleFiltersChange}
@@ -91,7 +133,7 @@ const FinanceReports = memo(() => {
         categories={categories}
       />
 
-      <ReportSummary transactions={filteredTransactions} currency="IRR" />
+      <ReportSummary transactions={filteredTransactions} currency={baseCurrency} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ReportCategoryChart transactions={filteredTransactions} categories={categories} />

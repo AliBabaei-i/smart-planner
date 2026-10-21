@@ -11,18 +11,13 @@ import './i18n/config'
 import './index.css'
 
 // ✅ Dev Tools: پاکسازی Service Worker در dev
-if (import.meta.env.DEV) {
-  console.log('🔧 Dev mode detected - cleaning up Service Workers...')
+// main.tsx
+if (import.meta.env.DEV && import.meta.env.VITE_UNREGISTER_SW === 'true') {
+  console.log('🔧 Forcing SW cleanup (VITE_UNREGISTER_SW=true)...')
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then((regs) => {
       regs.forEach((reg) => reg.unregister())
-      console.log(`✅ Unregistered ${regs.length} Service Worker(s)`)
     })
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        names.forEach((name) => caches.delete(name))
-      })
-    }
   }
 }
 

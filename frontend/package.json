@@ -68,7 +68,7 @@
     "i18next": "^23.5.1",
     "i18next-browser-languagedetector": "^7.1.0",
     "idb-keyval": "^6.3.0",
-    "jalaali-js": "^1.2.7",
+    "jalaali-js": "^1.2.8",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.284.0",
     "react": "^18.2.0",

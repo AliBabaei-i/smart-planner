@@ -106,7 +106,8 @@ const priorityInfo = task ? PRIORITIES[task.priority] : null
 
 const handleSaveNotes = useCallback(() => {
   if (!task) return
-  dispatch(updateTaskNotes({ taskId: task.id, notes }))
+ // ✅ بعد
+dispatch(updateTaskNotes({ id: task.id, notes }))
   toast.success(t('actions.save'), { position: 'bottom-left', autoClose: 2000 })
 }, [dispatch, task, notes, t])
 

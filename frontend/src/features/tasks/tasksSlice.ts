@@ -129,13 +129,10 @@ const tasksSlice = createSlice({
       }
     },
 
-    updateTaskNotes: (state, action: PayloadAction<{ id: string; notes: string }>) => {
-      const task = state.tasks.find(t => t.id === action.payload.id)
-      if (task) {
-        task.notes = action.payload.notes
-        task.updatedAt = new Date().toISOString()
-      }
-    },
+   updateTaskNotes: (state, action: PayloadAction<{ taskId: string; notes: string }>) => {
+  const task = state.tasks.find(t => t.id === action.payload.taskId)
+  if (task) task.notes = action.payload.notes
+},
 
     addTagToTask: (state, action: PayloadAction<{ taskId: string; tag: string }>) => {
       const task = state.tasks.find(t => t.id === action.payload.taskId)
