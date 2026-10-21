@@ -11,26 +11,21 @@ const KhumsWidget = memo(() => {
   const { i18n } = useTranslation()
   const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
-  // ✅ دفاعی: اگر finance وجود نداشت، مقدار پیش‌فرض
   const finance = useSelector((s: RootState) => (s as any).finance)
-  const settings = finance?.islamicSettings ?? { khumsYearStart: null, khumsPaid: 0 }
+  const settings = finance?.islamicSettings ?? {}
 
-  // ✅ دفاعی: try/catch برای selector
-  let calculation: { khums: number; sahmImam: number; sahmSadat: number } = {
-    khums: 0,
-    sahmImam: 0,
-    sahmSadat: 0,
-  }
-  try {
-    calculation = useSelector(selectKhumsCalculation) as any
-  } catch {
-    // اگر selector خطا داد، از پیش‌فرض استفاده کن
-  }
+  // ✅ FIX: چک کردن هر دو فیلد
+  const hasYearStart = !!(
+    settings.khumsYearMonthDay ||
+    settings.khumsYearStart
+  )
 
-  const hasYearStart = !!settings.khumsYearStart
-  const totalPaid = settings.khumsPaid || 0
-  const remaining = Math.max(0, (calculation?.khums || 0) - totalPaid)
+  const calculation = useSelector(selectKhumsCalculation) as any
+  const totalPaid = Number(settings.khumsPaid) || 0
+  const khumsDue = Number(calculation?.khums) || 0
+  const remaining = Math.max(0, khumsDue - totalPaid)
 
+  // ─── حالت ۱: سال خمسی تنظیم نشده ───
   if (!hasYearStart) {
     return (
       <div className="text-center py-3">
@@ -38,7 +33,10 @@ const KhumsWidget = memo(() => {
         <div className="text-[10px] text-gray-500 mb-2">
           {isPersian ? 'سال خمسی تنظیم نشده' : 'Khums year not set'}
         </div>
-        <Link to="/finance" className="inline-flex items-center gap-1 text-[10px] text-teal-600 hover:underline">
+        <Link
+          to="/finance"
+          className="inline-flex items-center gap-1 text-[10px] text-teal-600 hover:underline"
+        >
           <span>{isPersian ? 'تنظیمات' : 'Settings'}</span>
           <FiArrowRight size={10} />
         </Link>
@@ -46,7 +44,8 @@ const KhumsWidget = memo(() => {
     )
   }
 
-  if ((calculation?.khums || 0) === 0) {
+  // ─── حالت ۲: خمس واجب نیست ───
+  if (khumsDue === 0) {
     return (
       <div className="text-center py-3">
         <FiPercent size={20} className="mx-auto text-green-400 mb-2" />
@@ -57,6 +56,7 @@ const KhumsWidget = memo(() => {
     )
   }
 
+  // ─── حالت ۳: خمس محاسبه شد ───
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
@@ -64,7 +64,9 @@ const KhumsWidget = memo(() => {
           <FiPercent size={14} className="text-teal-600 dark:text-teal-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] text-gray-500">{isPersian ? 'خمس قابل پرداخت' : 'Khums Due'}</div>
+          <div className="text-[10px] text-gray-500">
+            {isPersian ? 'خمس قابل پرداخت' : 'Khums Due'}
+          </div>
           <div className="text-base font-bold text-teal-600 dark:text-teal-400 truncate">
             {formatCompact(remaining, isPersian)}
           </div>
@@ -73,23 +75,38 @@ const KhumsWidget = memo(() => {
 
       {totalPaid > 0 && (
         <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded text-[10px] flex items-center justify-between">
-          <span className="text-green-700 dark:text-green-400">{isPersian ? 'پرداخت‌شده' : 'Paid'}</span>
-          <span className="font-bold text-green-700 dark:text-green-400">{formatCompact(totalPaid, isPersian)}</span>
+          <span className="text-green-700 dark:text-green-400">
+            {isPersian ? 'پرداخت‌شده' : 'Paid'}
+          </span>
+          <span className="font-bold text-green-700 dark:text-green-400">
+            {formatCompact(totalPaid, isPersian)}
+          </span>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-1.5 text-[9px]">
         <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded text-center">
-          <div className="text-blue-600 dark:text-blue-400 mb-0.5">{isPersian ? 'سهم امام' : 'Imam'}</div>
-          <div className="font-bold text-blue-700 dark:text-blue-300 truncate">{formatCompact(calculation.sahmImam, isPersian)}</div>
+          <div className="text-blue-600 dark:text-blue-400 mb-0.5">
+            {isPersian ? 'سهم امام' : 'Imam'}
+          </div>
+          <div className="font-bold text-blue-700 dark:text-blue-300 truncate">
+            {formatCompact(calculation?.sahmImam || 0, isPersian)}
+          </div>
         </div>
         <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded text-center">
-          <div className="text-purple-600 dark:text-purple-400 mb-0.5">{isPersian ? 'سهم سادات' : 'Sadat'}</div>
-          <div className="font-bold text-purple-700 dark:text-purple-300 truncate">{formatCompact(calculation.sahmSadat, isPersian)}</div>
+          <div className="text-purple-600 dark:text-purple-400 mb-0.5">
+            {isPersian ? 'سهم سادات' : 'Sadat'}
+          </div>
+          <div className="font-bold text-purple-700 dark:text-purple-300 truncate">
+            {formatCompact(calculation?.sahmSadat || 0, isPersian)}
+          </div>
         </div>
       </div>
 
-      <Link to="/finance" className="flex items-center justify-center gap-1 text-[10px] text-teal-600 dark:text-teal-400 hover:underline">
+      <Link
+        to="/finance"
+        className="flex items-center justify-center gap-1 text-[10px] text-teal-600 dark:text-teal-400 hover:underline"
+      >
         <span>{isPersian ? 'محاسبه و پرداخت' : 'Calculate & Pay'}</span>
         <FiArrowRight size={10} />
       </Link>

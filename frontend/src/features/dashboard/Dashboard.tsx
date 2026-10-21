@@ -79,19 +79,19 @@ const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
 // ═══════════════════════════════════════════════
 const WelcomeHeader = memo(() => {
   const { t, i18n } = useTranslation()
-  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
+  const isRTL = i18n.language === 'fa' || i18n.language?.startsWith('fa')
   const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
     const hour = new Date().getHours()
-    if (hour < 12) setGreeting(isPersian ? 'صبح بخیر' : 'Good Morning')
-    else if (hour < 18) setGreeting(isPersian ? 'عصر بخیر' : 'Good Afternoon')
-    else setGreeting(isPersian ? 'شب بخیر' : 'Good Evening')
-  }, [isPersian])
+    if (hour < 12) setGreeting(isRTL ? 'صبح بخیر' : 'Good Morning')
+    else if (hour < 18) setGreeting(isRTL ? 'عصر بخیر' : 'Good Afternoon')
+    else setGreeting(isRTL ? 'شب بخیر' : 'Good Evening')
+  }, [isRTL])
 
   const today = new Date()
   const dateStr = formatDateByLang(today.toISOString().split('T')[0])
-  const dayName = today.toLocaleDateString(isPersian ? 'fa-IR' : 'en-US', {
+  const dayName = today.toLocaleDateString(isRTL ? 'fa-IR' : 'en-US', {
     weekday: 'long',
   })
 
@@ -150,9 +150,9 @@ const DashboardSkeleton = () => (
 // ✅ Dashboard
 // ═══════════════════════════════════════════════
 const Dashboard = () => {
-  const { t, i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
   const dispatch = useDispatch<AppDispatch>()
-  const isPersian = i18n.language === 'fa' || i18n.language?.startsWith('fa')
+  const isRTL = i18n.language === 'fa' || i18n.language?.startsWith('fa')
 
   const dashboard = useSelector((s: RootState) => s.dashboard) as
     | DashboardState
@@ -169,39 +169,38 @@ const Dashboard = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const { visibleWidgets, hiddenWidgets, rglLayout } = useMemo(() => {
-    const safeNum = (n: unknown, fallback: number) => {
-      const x = Number(n)
-      return Number.isFinite(x) ? x : fallback
-    }
+  const safeNum = (n: unknown, fallback: number) => {
+    const x = Number(n)
+    return Number.isFinite(x) ? x : fallback
+  }
 
-    const visible = layout
-      .filter(
-        (w: WidgetConfig) =>
-          w.visible && WIDGETS[w.id] && WIDGET_COMPONENTS[w.id]
-      )
-      .map((w: WidgetConfig) => ({
-        ...w,
-        x: Math.max(0, safeNum(w.x, 0)),
-        y: Math.max(0, safeNum(w.y, 0)),
-        w: Math.max(1, safeNum(w.w, 1)),
-        h: Math.max(1, safeNum(w.h, 2)),
-      }))
-
+  const visible = layout
+    .filter(
+      (w: WidgetConfig) =>
+        w.visible && WIDGETS[w.id] && WIDGET_COMPONENTS[w.id]
+    )
+    .map((w: WidgetConfig) => ({
+      ...w,
+      x: Math.max(0, safeNum(w.x, 0)),
+      y: Math.max(0, safeNum(w.y, 0)),
+      w: Math.max(1, safeNum(w.w, 1)),
+      h: Math.max(1, safeNum(w.h, 2)),
+    }))
+    const COLS = 4
     return {
-      visibleWidgets: visible,
-      hiddenWidgets: layout.filter((w: WidgetConfig) => !w.visible),
-      rglLayout: visible.map((w: WidgetConfig) => ({
-        i: w.id,
-        x: w.x,
-        y: w.y,
-        w: w.w,
-        h: w.h,
-        minW: w.minW ?? 1,
-        minH: w.minH ?? 2,
-      })),
-    }
-  }, [layout])
-
+    visibleWidgets: visible,
+    hiddenWidgets: layout.filter((w: WidgetConfig) => !w.visible),
+    rglLayout: visible.map((w: WidgetConfig) => ({
+      i: w.id,
+      x: isRTL ? Math.max(0, COLS - w.x - w.w) : w.x,
+      y: w.y,
+      w: w.w,
+      h: w.h,
+      minW: w.minW ?? 1,
+      minH: w.minH ?? 2,
+    })),
+  }
+}, [layout, isRTL])
   // ✅ باز کردن دیالوگ (نه window.confirm)
   const handleOpenReset = useCallback(() => {
     setShowResetConfirm(true)
@@ -218,26 +217,28 @@ const Dashboard = () => {
   }, [])
 
   // ✅ فقط تغییرات واقعی را dispatch کن
-  const handleLayoutChange = useCallback(
-    (current: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
-      if (!Array.isArray(current) || current.length === 0) return
+ const handleLayoutChange = useCallback(
+  (current: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
+    if (!Array.isArray(current) || current.length === 0) return
 
-      const changed = current.some((item) => {
-        const w = layout.find((x) => x.id === item.i)
-        if (!w) return false
-        return (
-          w.x !== item.x ||
-          w.y !== item.y ||
-          w.w !== item.w ||
-          w.h !== item.h
-        )
-      })
+    // ✅ flip برگشتی برای ذخیره در RTL
+    const COLS = 4
+    const converted = current.map((item) => ({
+      ...item,
+      x: isRTL ? Math.max(0, COLS - item.x - item.w) : item.x,
+    }))
 
-      if (!changed) return
-      dispatch(updateLayout(current))
-    },
-    [dispatch, layout]
-  )
+    const changed = converted.some((item) => {
+      const w = layout.find((x) => x.id === item.i)
+      if (!w) return false
+      return w.x !== item.x || w.y !== item.y || w.w !== item.w || w.h !== item.h
+    })
+
+    if (!changed) return
+    dispatch(updateLayout(converted))
+  },
+  [dispatch, layout, isRTL]
+)
 
   if (!dashboard || layout.length === 0) {
     return <DashboardSkeleton />
@@ -330,54 +331,59 @@ const Dashboard = () => {
 
       {/* ═══ گرید ویجت‌ها ═══ */}
       {visibleWidgets.length > 0 ? (
-<ResponsiveGridLayout
-  key={`grid-v${dashboard.layoutVersion}-r${dashboard.lastResetAt}`}
-  className="layout"
-  layouts={{
-    lg: rglLayout,
-    md: rglLayout,
-    sm: rglLayout,
-    xs: rglLayout,
-    xxs: rglLayout,
-  }}
-  breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-  cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
-  rowHeight={90}
-  margin={[16, 16]}
-  containerPadding={[0, 0]}
-  isDraggable={editMode}
-  isResizable={editMode}
-  draggableHandle=".drag-handle"
-  resizeHandles={['se', 'sw', 'ne', 'nw', 's', 'e', 'w', 'n']}
-  compactType="vertical"
-  preventCollision={false}
-  allowOverlap={false}
-  onLayoutChange={handleLayoutChange}
-  isBounded={false}
-  useCSSTransforms
->
-          {visibleWidgets.map((widget: WidgetConfig) => {
-            const meta = WIDGETS[widget.id]
-            const Comp = WIDGET_COMPONENTS[widget.id]
-            if (!meta || !Comp) return <div key={widget.id} />
+  <div style={{ direction: 'ltr' }}>
+    <ResponsiveGridLayout
+      key={`grid-v${dashboard.layoutVersion}-r${dashboard.lastResetAt}`}
+      className="layout"
+      layouts={{
+        lg: rglLayout,
+        md: rglLayout,
+        sm: rglLayout,
+        xs: rglLayout,
+        xxs: rglLayout,
+      }}
+      breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+      cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
+      rowHeight={90}
+      margin={[16, 16]}
+      containerPadding={[0, 0]}
+      isDraggable={editMode}
+      isResizable={editMode}
+      draggableHandle=".drag-handle"
+      resizeHandles={['se', 'sw', 'ne', 'nw', 's', 'e', 'w', 'n']}
+      compactType="vertical"
+      preventCollision={false}
+      allowOverlap={false}
+      onLayoutChange={handleLayoutChange}
+      isBounded={false}
+      useCSSTransforms
+    >
+      {visibleWidgets.map((widget: WidgetConfig) => {
+        const meta = WIDGETS[widget.id]
+        const Comp = WIDGET_COMPONENTS[widget.id]
+        if (!meta || !Comp) return <div key={widget.id} />
 
-            return (
-              <div key={widget.id} className="min-w-0">
-                <WidgetWrapper
-                  id={widget.id}
-                  title={t(meta.titleKey)}
-                  isEditMode={editMode}
-                  onHide={() => dispatch(toggleWidget(widget.id))}
-                >
-                  <WidgetErrorBoundary widgetName={widget.id}>
-                    <Comp />
-                  </WidgetErrorBoundary>
-                </WidgetWrapper>
-              </div>
-            )
-          })}
-        </ResponsiveGridLayout>
-      ) : (
+        return (
+          <div
+            key={widget.id}
+            className="min-w-0"
+            style={{ direction: isRTL ? 'rtl' : 'ltr' }}
+          >
+            <WidgetWrapper
+              id={widget.id}
+              title={t(meta.titleKey)}
+              isEditMode={editMode}
+              onHide={() => dispatch(toggleWidget(widget.id))}
+            >
+              <WidgetErrorBoundary widgetName={widget.id}>
+                <Comp />
+              </WidgetErrorBoundary>
+            </WidgetWrapper>
+          </div>
+        )
+      })}
+    </ResponsiveGridLayout>
+  </div>) : (
         <Card className="p-10 text-center bg-gray-50 dark:bg-gray-800/50 border-dashed border-2">
           <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
             <FiEyeOff size={32} className="text-gray-400" />
@@ -439,7 +445,7 @@ const Dashboard = () => {
         onClose={handleCancelReset}
         onConfirm={handleConfirmReset}
         title={
-          isPersian ? 'بازنشانی چیدمان داشبورد' : 'Reset Dashboard Layout'
+          isRTL ? 'بازنشانی چیدمان داشبورد' : 'Reset Dashboard Layout'
         }
         message={
           <div className="space-y-3 text-start">
@@ -450,12 +456,12 @@ const Dashboard = () => {
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-1">
-                  {isPersian
+                  {isRTL
                     ? 'این کار قابل بازگشت نیست'
                     : 'This cannot be undone'}
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                  {isPersian
+                  {isRTL
                     ? 'تمام تغییرات چیدمان فعلی شما (جابه‌جایی، اندازه، ویجت‌های مخفی) از بین می‌رود و چیدمان به حالت پیش‌فرض زیبا بازمی‌گردد.'
                     : 'All your current layout changes (positions, sizes, hidden widgets) will be lost and the layout will return to the beautiful default.'}
                 </p>
@@ -464,15 +470,15 @@ const Dashboard = () => {
 
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                {isPersian
+                {isRTL
                   ? 'چیدمان پیش‌فرض شامل: نوار KPI، نمره بهره‌وری، کارهای امروز، نمودار روند، اقدامات سریع، پومودورو، ددلاین‌ها، کارهای اخیر، پروژه‌ها، یادداشت‌ها، مالی و تراکنش‌ها است.'
                   : 'The default layout includes: KPI bar, productivity score, today tasks, trend chart, quick actions, pomodoro, deadlines, recent tasks, projects, notes, finance, and transactions.'}
               </p>
             </div>
           </div>
         }
-        confirmText={isPersian ? 'بله، بازنشانی کن' : 'Yes, Reset Layout'}
-        cancelText={isPersian ? 'انصراف' : 'Cancel'}
+        confirmText={isRTL ? 'بله، بازنشانی کن' : 'Yes, Reset Layout'}
+        cancelText={isRTL ? 'انصراف' : 'Cancel'}
         variant="danger"
       />
     </div>

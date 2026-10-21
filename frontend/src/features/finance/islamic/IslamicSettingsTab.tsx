@@ -456,7 +456,7 @@ const ToggleRow: React.FC<{
   checked: boolean
   onChange: (v: boolean) => void
 }> = ({ icon, label, description, checked, onChange }) => (
-  <label className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
+  <div className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
     <div className="flex items-start gap-2.5 flex-1 min-w-0">
       <div className="mt-0.5 flex-shrink-0">{icon}</div>
       <div className="min-w-0">
@@ -466,16 +466,23 @@ const ToggleRow: React.FC<{
     </div>
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
         checked ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
       }`}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-        checked ? 'translate-x-6' : 'translate-x-1'
-      }`} />
+      {/* ✅ RTL-aware transform */}
+      <span
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+          checked
+            ? 'translate-x-6 rtl:-translate-x-6'
+            : 'translate-x-1 rtl:-translate-x-1'
+        }`}
+      />
     </button>
-  </label>
+  </div>
 )
 
 export default IslamicSettingsTab
