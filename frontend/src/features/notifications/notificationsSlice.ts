@@ -1,148 +1,199 @@
-// import { createSlice } from '@reduxjs/toolkit'
-// import { v4 as uuidv4 } from 'uuid'
-
-// const initialState = {
-//   notifications: [],
-//   settings: {
-//     taskReminders: true,
-//     dueDateAlerts: true,
-//     productivityReports: false,
-//     soundEnabled: true,
-//     pushEnabled: true
-//   }
-// }
-
-// const notificationsSlice = createSlice({
-//   name: 'notifications',
-//   initialState,
-//   reducers: {
-//     // افزودن اعلان جدید
-//     addNotification: (state, action) => {
-//       const newNotification = {
-//         id: uuidv4(),
-//         type: action.payload.type || 'info', // 'info', 'warning', 'success', 'error'
-//         title: action.payload.title,
-//         message: action.payload.message,
-//         read: false,
-//         createdAt: new Date().toISOString(),
-//         action: action.payload.action // optional: { label: 'مشاهده', url: '/tasks' }
-//       }
-//       state.notifications.unshift(newNotification) // اضافه به ابتدای لیست
-//     },
-
-//     // علامت‌گذاری اعلان به عنوان خوانده شده
-//     markAsRead: (state, action) => {
-//       const notification = state.notifications.find(n => n.id === action.payload)
-//       if (notification) {
-//         notification.read = true
-//       }
-//     },
-
-//     // حذف اعلان
-//     removeNotification: (state, action) => {
-//       state.notifications = state.notifications.filter(n => n.id !== action.payload)
-//     },
-
-//     // خواندن همه اعلان‌ها
-//     markAllAsRead: (state) => {
-//       state.notifications.forEach(notification => {
-//         notification.read = true
-//       })
-//     },
-
-//     // حذف همه اعلان‌ها
-//     clearAllNotifications: (state) => {
-//       state.notifications = []
-//     },
-
-//     // آپدیت تنظیمات اعلان‌ها
-//     updateNotificationSettings: (state, action) => {
-//       state.settings = { ...state.settings, ...action.payload }
-//     }
-//   }
-// })
-
-// export const {
-//   addNotification,
-//   markAsRead,
-//   removeNotification,
-//   markAllAsRead,
-//   clearAllNotifications,
-//   updateNotificationSettings
-// } = notificationsSlice.actions
-
-// export default notificationsSlice.reducer
-
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-const initialState = {
+// ✅ همه‌ی انواع قبلی + جدید
+export type NotificationType =
+  | 'task_due'
+  | 'task_overdue'
+  | 'achievement'
+  | 'sync_error'
+  | 'sync_success'
+  | 'pomodoro_done'
+  | 'habit_streak'
+  | 'finance_budget'
+  | 'system'
+  | 'info'
+  | 'warning'
+  | 'success'
+  | 'error'
+
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  priority?: NotificationPriority
+  title: string
+  message: string
+  actionPath?: string
+  /** ✅ سازگاری با Notifications.jsx قدیمی */
+  action?: { label?: string; url?: string }
+  meta?: Record<string, string | number | boolean | null>
+  read: boolean
+  dismissed?: boolean
+  createdAt: string
+}
+
+export interface NotificationsSettings {
+  // ✅ قدیمی (NotificationSettings.jsx)
+  taskReminders: boolean
+  dueDateAlerts: boolean
+  productivityReports: boolean
+  soundEnabled: boolean
+  pushEnabled: boolean
+  // ✅ جدید
+  enabled: boolean
+  showToasts: boolean
+  maxItems: number
+  mutedTypes: NotificationType[]
+}
+
+export interface NotificationsState {
+  notifications: AppNotification[]
+  settings: NotificationsSettings
+}
+
+const initialState: NotificationsState = {
   notifications: [],
   settings: {
     taskReminders: true,
     dueDateAlerts: true,
-    productivityReports: true,  // ← پیش‌فرض true
+    productivityReports: true,
     soundEnabled: true,
-    pushEnabled: true
-  }
+    pushEnabled: true,
+    enabled: true,
+    showToasts: true,
+    maxItems: 100,
+    mutedTypes: [],
+  },
 }
+
 const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    // افزودن اعلان جدید
-    addNotification: (state, action) => {
-      const newNotification = {
-        id: uuidv4(),
-        type: action.payload.type || 'info', // 'info', 'warning', 'success', 'error'
-        title: action.payload.title,
-        message: action.payload.message,
+    addNotification: (state, action: PayloadAction<any>) => {
+      const p = action.payload || {}
+      if (!state.settings.enabled) return
+      if (state.settings.mutedTypes.includes(p.type)) return
+
+      const notification: AppNotification = {
+        id: p.id || uuidv4(),
+        type: p.type || 'info',
+        priority: p.priority,
+        title: p.title || '',
+        message: p.message || '',
+        actionPath: p.actionPath || p.action?.url,
+        action: p.action,
+        meta: p.meta,
         read: false,
-        createdAt: new Date().toISOString(),
-        action: action.payload.action // optional: { label: 'مشاهده', url: '/tasks' }
+        dismissed: false,
+        createdAt: p.createdAt || new Date().toISOString(),
       }
-      state.notifications.unshift(newNotification) // اضافه به ابتدای لیست
-    },
 
-    // علامت‌گذاری اعلان به عنوان خوانده شده
-    markAsRead: (state, action) => {
-      const notification = state.notifications.find(n => n.id === action.payload)
-      if (notification) {
-        notification.read = true
+      // dedup در ۵ دقیقه اخیر
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000
+      const isDuplicate = state.notifications.some(
+        (n) =>
+          n.type === notification.type &&
+          JSON.stringify(n.meta) === JSON.stringify(notification.meta) &&
+          new Date(n.createdAt).getTime() > fiveMinAgo
+      )
+      if (isDuplicate) return
+
+      state.notifications.unshift(notification)
+      if (state.notifications.length > (state.settings.maxItems || 100)) {
+        state.notifications = state.notifications.slice(0, state.settings.maxItems)
       }
     },
 
-    // حذف اعلان
-    removeNotification: (state, action) => {
-      state.notifications = state.notifications.filter(n => n.id !== action.payload)
+    markAsRead: (state, action: PayloadAction<string>) => {
+      const n = state.notifications.find((x) => x.id === action.payload)
+      if (n) n.read = true
     },
 
-    // خواندن همه اعلان‌ها
+    removeNotification: (state, action: PayloadAction<string>) => {
+      state.notifications = state.notifications.filter((x) => x.id !== action.payload)
+    },
+
+    dismissNotification: (state, action: PayloadAction<string>) => {
+      const n = state.notifications.find((x) => x.id === action.payload)
+      if (n) {
+        n.dismissed = true
+        n.read = true
+      }
+    },
+
     markAllAsRead: (state) => {
-      state.notifications.forEach(notification => {
-        notification.read = true
+      state.notifications.forEach((n) => {
+        n.read = true
       })
     },
 
-    // حذف همه اعلان‌ها
     clearAllNotifications: (state) => {
       state.notifications = []
     },
 
-    // آپدیت تنظیمات اعلان‌ها
-    updateNotificationSettings: (state, action) => {
+    clearAll: (state) => {
+      state.notifications = []
+    },
+
+    clearReadNotifications: (state) => {
+      state.notifications = state.notifications.filter((n) => !n.read)
+    },
+
+    updateNotificationSettings: (
+      state,
+      action: PayloadAction<Partial<NotificationsSettings>>
+    ) => {
       state.settings = { ...state.settings, ...action.payload }
-    }
-  }
+    },
+
+    updateSettings: (
+      state,
+      action: PayloadAction<Partial<NotificationsSettings>>
+    ) => {
+      state.settings = { ...state.settings, ...action.payload }
+    },
+
+    toggleMuteType: (state, action: PayloadAction<NotificationType>) => {
+      const idx = state.settings.mutedTypes.indexOf(action.payload)
+      if (idx >= 0) state.settings.mutedTypes.splice(idx, 1)
+      else state.settings.mutedTypes.push(action.payload)
+    },
+  },
 })
 
 export const {
   addNotification,
   markAsRead,
   removeNotification,
+  dismissNotification,
   markAllAsRead,
   clearAllNotifications,
-  updateNotificationSettings
+  clearAll,
+  clearReadNotifications,
+  updateNotificationSettings,
+  updateSettings,
+  toggleMuteType,
 } = notificationsSlice.actions
+
+// ═══════════════════════════════════════════════
+// ✅ Selectors — سازگار با state قدیمی
+// ═══════════════════════════════════════════════
+
+export const selectAllNotifications = (state: any): AppNotification[] =>
+  (state.notifications?.notifications || []).filter(
+    (n: AppNotification) => !n.dismissed
+  )
+
+export const selectUnreadCount = (state: any): number =>
+  (state.notifications?.notifications || []).filter(
+    (n: AppNotification) => !n.read && !n.dismissed
+  ).length
+
+export const selectNotificationSettings = (
+  state: any
+): NotificationsSettings => state.notifications?.settings || initialState.settings
 
 export default notificationsSlice.reducer

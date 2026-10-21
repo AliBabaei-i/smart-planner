@@ -17,7 +17,8 @@
         "settings": "تنظیمات",
         "growth": "رشد",
         "finance": "مالی",
-        "rewards": "پاداش‌ها"
+        "rewards": "پاداش‌ها",
+        "notifications": "اعلان‌ها"
     },
     "actions": {
         "create": "ایجاد",
@@ -52,31 +53,31 @@
         "quickAdd": "افزودن سریع"
     },
     "dashboard": {
-  "title": "داشبورد",
-  "customize": "شخصی‌سازی",
-  "saveLayout": "ذخیره چیدمان",
-  "resetLayout": "بازنشانی چیدمان",
-  "editModeHint": "می‌توانید ویجت‌ها را جابه‌جا، مخفی یا اندازه‌شان را تغییر دهید",
-  "hiddenWidgets": "ویجت‌های مخفی",
-  "noWidgets": "هیچ ویجتی فعال نیست",
-  "widgets": {
-    "productivityScore": "نمره بهره‌وری",
-    "stats": "آمار کلی",
-    "todayTasks": "کارهای امروز",
-    "quickActions": "اقدامات سریع",
-    "pomodoro": "تایمر پومودورو",
-    "recentTasks": "کارهای اخیر",
-    "upcomingDeadlines": "ددلاین‌های نزدیک",
-    "notes": "یادداشت‌ها",
-    "projectProgress": "پیشرفت پروژه‌ها",
-    "productivity": "روند بهره‌وری",
-    "tags": "برچسب‌ها",
-    "financeBalance": "موجودی مالی",
-    "monthlyBudget": "بودجه ماه",
-    "khums": "خمس",
-    "recentTransactions": "تراکنش‌های اخیر"
-  }
-},
+        "title": "داشبورد",
+        "customize": "شخصی‌سازی",
+        "saveLayout": "ذخیره چیدمان",
+        "resetLayout": "بازنشانی چیدمان",
+        "editModeHint": "می‌توانید ویجت‌ها را جابه‌جا، مخفی یا اندازه‌شان را تغییر دهید",
+        "hiddenWidgets": "ویجت‌های مخفی",
+        "noWidgets": "هیچ ویجتی فعال نیست",
+        "widgets": {
+            "productivityScore": "نمره بهره‌وری",
+            "stats": "آمار کلی",
+            "todayTasks": "کارهای امروز",
+            "quickActions": "اقدامات سریع",
+            "pomodoro": "تایمر پومودورو",
+            "recentTasks": "کارهای اخیر",
+            "upcomingDeadlines": "ددلاین‌های نزدیک",
+            "notes": "یادداشت‌ها",
+            "projectProgress": "پیشرفت پروژه‌ها",
+            "productivity": "روند بهره‌وری",
+            "tags": "برچسب‌ها",
+            "financeBalance": "موجودی مالی",
+            "monthlyBudget": "بودجه ماه",
+            "khums": "خمس",
+            "recentTransactions": "تراکنش‌های اخیر"
+        }
+    },
     "widgets": {
         "productivityScore": "نمره بهره‌وری",
         "productivityScoreDesc": "نمره روزانه بر اساس کارها، تمرکز و استریک",
@@ -1127,9 +1128,19 @@
     },
     "notifications": {
         "title": "اعلان‌ها",
-        "empty": "هیچ اعلانی ندارید",
-        "markAllRead": "خواندن همه",
-        "clearAll": "پاک کردن",
+        "subtitle": "همه اعلان‌ها و رویدادها",
+        "empty": "اعلانی وجود ندارد",
+        "emptyDesc": "وقتی رویدادی رخ دهد، اینجا نمایش داده می‌شود.",
+        "markAllRead": "همه خوانده",
+        "clearRead": "پاک‌کردن خوانده‌ها",
+        "clearAll": "پاک‌کردن همه",
+        "viewAll": "مشاهده همه",
+        "filter": {
+            "all": "همه",
+            "unread": "خوانده‌نشده",
+            "read": "خوانده‌شده"
+        },
+        
         "welcome": "به برنامه‌ریزی هوشمند خوش آمدید!",
         "taskReminder": "یادآوری کار",
         "dueSoon": "موعد انجام نزدیک است",

@@ -17,7 +17,8 @@
         "settings": "Settings",
         "growth": "Growth",
         "finance": "Finance",
-        "rewards": "Rewards"
+        "rewards": "Rewards",
+        "notifications": "Notifications"
     },
     "actions": {
         "create": "Create",
@@ -52,31 +53,31 @@
         "quickAdd": "Quick Add"
     },
     "dashboard": {
-  "title": "Dashboard",
-  "customize": "Customize",
-  "saveLayout": "Save Layout",
-  "resetLayout": "Reset Layout",
-  "editModeHint": "Reorder, hide, or resize widgets",
-  "hiddenWidgets": "Hidden Widgets",
-  "noWidgets": "No widgets enabled",
-  "widgets": {
-    "productivityScore": "Productivity Score",
-    "stats": "Overall Stats",
-    "todayTasks": "Today's Tasks",
-    "quickActions": "Quick Actions",
-    "pomodoro": "Pomodoro Timer",
-    "recentTasks": "Recent Tasks",
-    "upcomingDeadlines": "Upcoming Deadlines",
-    "notes": "Notes",
-    "projectProgress": "Project Progress",
-    "productivity": "Productivity Trend",
-    "tags": "Tags",
-    "financeBalance": "Finance Balance",
-    "monthlyBudget": "Monthly Budget",
-    "khums": "Khums",
-    "recentTransactions": "Recent Transactions"
-  }
-},
+        "title": "Dashboard",
+        "customize": "Customize",
+        "saveLayout": "Save Layout",
+        "resetLayout": "Reset Layout",
+        "editModeHint": "Reorder, hide, or resize widgets",
+        "hiddenWidgets": "Hidden Widgets",
+        "noWidgets": "No widgets enabled",
+        "widgets": {
+            "productivityScore": "Productivity Score",
+            "stats": "Overall Stats",
+            "todayTasks": "Today's Tasks",
+            "quickActions": "Quick Actions",
+            "pomodoro": "Pomodoro Timer",
+            "recentTasks": "Recent Tasks",
+            "upcomingDeadlines": "Upcoming Deadlines",
+            "notes": "Notes",
+            "projectProgress": "Project Progress",
+            "productivity": "Productivity Trend",
+            "tags": "Tags",
+            "financeBalance": "Finance Balance",
+            "monthlyBudget": "Monthly Budget",
+            "khums": "Khums",
+            "recentTransactions": "Recent Transactions"
+        }
+    },
     "widgets": {
         "productivityScore": "Productivity Score",
         "productivityScoreDesc": "Daily score based on tasks, focus and streak",
@@ -1124,6 +1125,13 @@
         }
     },
     "notifications": {
+        "subtitle": "All app notifications and events",
+        "viewAll": "View all",
+        "filter": {
+            "all": "All",
+            "unread": "Unread",
+            "read": "Read"
+        },
         "title": "Notifications",
         "empty": "No notifications",
         "markAllRead": "Mark All Read",

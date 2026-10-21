@@ -276,13 +276,13 @@ function AppContent() {
               />
             </Route>
             <Route
-              path="notifications"
-              element={
-                <PageTransition>
-                  <NotificationsPage />
-                </PageTransition>
-              }
-            />
+  path="notifications"
+  element={
+    <PageTransition>
+      <NotificationsPage />
+    </PageTransition>
+  }
+/>
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
