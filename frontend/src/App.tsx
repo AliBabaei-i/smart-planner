@@ -1,36 +1,24 @@
 import React, { useEffect, lazy, Suspense, useState, useCallback } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { AnimatePresence } from 'framer-motion'
 import type { AppDispatch } from './app/store'
-
-// ─── Auth & Services ───
 import { checkAuth, selectIsAuthenticated } from './features/auth/authSlice'
 import { generateRecurringTasks } from './features/tasks/tasksSlice'
 import { recalculateBalances } from './features/finance/financeSlice'
 import { syncService } from './services/syncService'
-
-// ─── Theme ───
 import { ThemeEffects } from './features/theme/ThemeSettings'
 import { initializeTheme } from './features/theme/themeSlice'
 
-// ─── Core ───
 import ErrorBoundary from './components/common/ErrorBoundary'
 import ProtectedRoute from './features/auth/ProtectedRoute'
 import InstallPrompt from './components/common/InstallPrompt'
-import PageTransition from './components/common/PageTransition'
 import GlobalSearch from './components/common/GlobalSearch'
 import QuickAddTask from './components/ui/QuickAddTask'
 import AppLayout from './components/layout/AppLayout'
-
-// ─── Skeletons ───
 import AnalyticsSkeleton from './features/analytics/AnalyticsSkeleton'
 import FinanceReportsSkeleton from './features/finance/FinanceReportsSkeleton'
-
-// ─── Hook ───
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
-// ─── Pages (lazy) ───
 const LoginPage = lazy(() => import('./features/auth/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'))
@@ -63,19 +51,16 @@ const WithSkeleton: React.FC<{
 function AppContent() {
   const dispatch = useDispatch<AppDispatch>()
   const isAuthenticated = useSelector(selectIsAuthenticated)
-  const location = useLocation()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
 
-  // ✅ Bootstrap: theme + auth + recurring
   useEffect(() => {
     initializeTheme()
     dispatch(checkAuth())
     dispatch(generateRecurringTasks())
   }, [dispatch])
 
-  // ✅ بازمحاسبه‌ی موجودی‌ها (fix باگ جمع/کسر معکوس)
   useEffect(() => {
     dispatch(recalculateBalances())
     const unsubscribe = syncService.subscribe((event: any) => {
@@ -84,7 +69,6 @@ function AppContent() {
     return unsubscribe
   }, [dispatch])
 
-  // ✅ شروع/توقف سینک
   useEffect(() => {
     if (isAuthenticated) syncService.start()
     else syncService.stop()
@@ -93,7 +77,6 @@ function AppContent() {
     }
   }, [isAuthenticated])
 
-  // ✅ میان‌برها
   const handleOpenSearch = useCallback(() => setShowSearch(true), [])
   const handleOpenQuickAdd = useCallback(() => setShowQuickAdd(true), [])
 
@@ -107,72 +90,65 @@ function AppContent() {
       <ThemeEffects />
 
       <Suspense fallback={<LoadingFallback />}>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            {/* ═══ Public — بدون layout ═══ */}
-            <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
-            <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
-            <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
+        {/* ✅ بدون key و بدون AnimatePresence در این لایه */}
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            {/* ═══ Protected — همه‌چیز داخل AppLayout ═══ */}
+          {/* Protected — AppLayout ثابت، فقط Outlet عوض می‌شود */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout
+                  onOpenSearch={handleOpenSearch}
+                  onOpenQuickAdd={handleOpenQuickAdd}
+                />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="projects" element={<ProjectsPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="habits" element={<HabitsPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="goals" element={<GoalsPage />} />
+            <Route path="growth" element={<GrowthPage />} />
+            <Route path="planning" element={<PlanningPage />} />
+
             <Route
-              path="/"
+              path="analytics"
               element={
-                <ProtectedRoute>
-                  <AppLayout
-                    onOpenSearch={handleOpenSearch}
-                    onOpenQuickAdd={handleOpenQuickAdd}
-                  />
-                </ProtectedRoute>
+                <WithSkeleton skeleton={<AnalyticsSkeleton />}>
+                  <AnalyticsPage />
+                </WithSkeleton>
               }
-            >
-              <Route index element={<PageTransition><Dashboard /></PageTransition>} />
-              <Route path="projects" element={<PageTransition><ProjectsPage /></PageTransition>} />
-              <Route path="tasks" element={<PageTransition><TasksPage /></PageTransition>} />
-              <Route path="habits" element={<PageTransition><HabitsPage /></PageTransition>} />
-              <Route path="notes" element={<PageTransition><NotesPage /></PageTransition>} />
-              <Route path="goals" element={<PageTransition><GoalsPage /></PageTransition>} />
-              <Route path="growth" element={<PageTransition><GrowthPage /></PageTransition>} />
-              <Route path="planning" element={<PageTransition><PlanningPage /></PageTransition>} />
+            />
 
-              <Route
-                path="analytics"
-                element={
-                  <PageTransition>
-                    <WithSkeleton skeleton={<AnalyticsSkeleton />}>
-                      <AnalyticsPage />
-                    </WithSkeleton>
-                  </PageTransition>
-                }
-              />
+            <Route path="achievements" element={<AchievementsPage />} />
 
-              <Route path="achievements" element={<PageTransition><AchievementsPage /></PageTransition>} />
+            <Route
+              path="finance"
+              element={
+                <WithSkeleton skeleton={<FinanceReportsSkeleton />}>
+                  <FinancePage />
+                </WithSkeleton>
+              }
+            />
 
-              <Route
-                path="finance"
-                element={
-                  <PageTransition>
-                    <WithSkeleton skeleton={<FinanceReportsSkeleton />}>
-                      <FinancePage />
-                    </WithSkeleton>
-                  </PageTransition>
-                }
-              />
+            <Route path="rewards" element={<RewardsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
 
-              <Route path="rewards" element={<PageTransition><RewardsPage /></PageTransition>} />
-              {/* ✅ اینجا داخل layout است، نه بیرون */}
-              <Route path="notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
-              <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AnimatePresence>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Suspense>
 
       <InstallPrompt />
 
-      {/* ═══ مودال‌های سراسری (بعد از auth) ═══ */}
       {isAuthenticated && (
         <>
           <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />

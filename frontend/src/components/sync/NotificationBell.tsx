@@ -9,30 +9,29 @@ import {
 } from 'react-icons/fi'
 import type { AppNotification, NotificationType } from '../../features/notifications/notificationsSlice'
 import {
-  markAsRead,
-  markAllAsRead,
-  dismissNotification,
-  selectAllNotifications,
-  selectUnreadCount,
+  markAsRead, markAllAsRead, dismissNotification,
+  selectAllNotifications, selectUnreadCount,
 } from '../../features/notifications/notificationsSlice'
 import type { RootState, AppDispatch } from '../../app/store'
 
+// ✅ همه‌ی ۱۳ نوع — شامل success
 const TYPE_CONFIG: Record<
   NotificationType,
   { Icon: React.ComponentType<{ size?: number; className?: string }>; color: string; bg: string }
 > = {
-  task_due: { Icon: FiClock, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-  task_overdue: { Icon: FiAlertCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30' },
-  achievement: { Icon: FiAward, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/30' },
-  sync_error: { Icon: FiAlertTriangle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30' },
-  sync_success: { Icon: FiRefreshCw, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30' },
-  pomodoro_done: { Icon: FiCheckCircle, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
-  habit_streak: { Icon: FiAward, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/30' },
-  finance_budget: { Icon: FiDollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-  system: { Icon: FiInfo, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-700' },
-  info: { Icon: FiInfo, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-  warning: { Icon: FiAlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
-  error: { Icon: FiAlertCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30' },
+  task_due:       { Icon: FiClock,         color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-900/30' },
+  task_overdue:   { Icon: FiAlertCircle,   color: 'text-red-600',     bg: 'bg-red-50 dark:bg-red-900/30' },
+  achievement:    { Icon: FiAward,         color: 'text-yellow-600',  bg: 'bg-yellow-50 dark:bg-yellow-900/30' },
+  sync_error:     { Icon: FiAlertTriangle, color: 'text-red-600',     bg: 'bg-red-50 dark:bg-red-900/30' },
+  sync_success:   { Icon: FiRefreshCw,     color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/30' },
+  pomodoro_done:  { Icon: FiCheckCircle,   color: 'text-purple-600',  bg: 'bg-purple-50 dark:bg-purple-900/30' },
+  habit_streak:   { Icon: FiAward,         color: 'text-orange-600',  bg: 'bg-orange-50 dark:bg-orange-900/30' },
+  finance_budget: { Icon: FiDollarSign,    color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+  system:         { Icon: FiInfo,          color: 'text-gray-600',    bg: 'bg-gray-50 dark:bg-gray-700' },
+  info:           { Icon: FiInfo,          color: 'text-blue-600',    bg: 'bg-blue-50 dark:bg-blue-900/30' },
+  warning:        { Icon: FiAlertTriangle, color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-900/30' },
+  success:        { Icon: FiCheckCircle,   color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/30' },   // ✅ اضافه شد
+  error:          { Icon: FiAlertCircle,   color: 'text-red-600',     bg: 'bg-red-50 dark:bg-red-900/30' },
 }
 
 const NotificationBell: React.FC = () => {
@@ -46,7 +45,6 @@ const NotificationBell: React.FC = () => {
 
   const notifications = useSelector(selectAllNotifications)
   const unreadCount = useSelector(selectUnreadCount)
-
   const recent = notifications.slice(0, 5)
 
   useEffect(() => {
@@ -165,18 +163,14 @@ const NotificationBell: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-1">
-                          <span
-                            className={`text-xs flex-1 ${
-                              notif.read
-                                ? 'text-gray-600 dark:text-gray-400'
-                                : 'text-gray-900 dark:text-white font-medium'
-                            }`}
-                          >
+                          <span className={`text-xs flex-1 ${
+                            notif.read
+                              ? 'text-gray-600 dark:text-gray-400'
+                              : 'text-gray-900 dark:text-white font-medium'
+                          }`}>
                             {notif.title}
                           </span>
-                          {!notif.read && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1" />
-                          )}
+                          {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1" />}
                         </div>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                           {notif.message}

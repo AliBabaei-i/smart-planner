@@ -1,5 +1,6 @@
 import React, { useState, useCallback, memo } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileBottomNav from './MobileBottomNav'
@@ -11,6 +12,7 @@ interface AppLayoutProps {
 
 const AppLayout = memo(({ onOpenSearch, onOpenQuickAdd }: AppLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
 
   const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
@@ -44,7 +46,18 @@ const AppLayout = memo(({ onOpenSearch, onOpenQuickAdd }: AppLayoutProps) => {
 
         <main className="flex-1 overflow-y-auto scrollbar-thin pb-20 md:pb-0">
           <div className="p-4 md:p-6 min-h-full">
-            <Outlet />
+            {/* ✅ AnimatePresence فقط دور محتوای صفحه — نه Sidebar/Header */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>

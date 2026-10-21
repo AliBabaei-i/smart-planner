@@ -46,7 +46,7 @@ const tasksSlice = createSlice({
         financialCategory: action.payload.financialCategory || null,
         financialTransactionId: action.payload.financialTransactionId || null,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(), __restore__: (_state, action: PayloadAction<any>) => action.payload,
       }
       state.tasks.push(newTask)
       // ✅ بروزرسانی تگ‌ها
@@ -129,10 +129,10 @@ const tasksSlice = createSlice({
       }
     },
 
-   updateTaskNotes: (state, action: PayloadAction<{ taskId: string; notes: string }>) => {
-  const task = state.tasks.find(t => t.id === action.payload.taskId)
-  if (task) task.notes = action.payload.notes
-},
+    updateTaskNotes: (state, action: PayloadAction<{ taskId: string; notes: string }>) => {
+      const task = state.tasks.find(t => t.id === action.payload.taskId)
+      if (task) task.notes = action.payload.notes
+    },
 
     addTagToTask: (state, action: PayloadAction<{ taskId: string; tag: string }>) => {
       const task = state.tasks.find(t => t.id === action.payload.taskId)
