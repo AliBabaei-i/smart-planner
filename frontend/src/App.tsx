@@ -2,23 +2,35 @@ import React, { useEffect, lazy, Suspense, useState, useCallback } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch } from './app/store'
+
+// ─── Auth & Services ───
 import { checkAuth, selectIsAuthenticated } from './features/auth/authSlice'
 import { generateRecurringTasks } from './features/tasks/tasksSlice'
 import { recalculateBalances } from './features/finance/financeSlice'
 import { syncService } from './services/syncService'
+
+// ─── Theme ───
 import { ThemeEffects } from './features/theme/ThemeSettings'
 import { initializeTheme } from './features/theme/themeSlice'
 
+// ─── Core ───
 import ErrorBoundary from './components/common/ErrorBoundary'
 import ProtectedRoute from './features/auth/ProtectedRoute'
 import InstallPrompt from './components/common/InstallPrompt'
 import GlobalSearch from './components/common/GlobalSearch'
 import QuickAddTask from './components/ui/QuickAddTask'
+
+// ─── Layout (eager) ───
 import AppLayout from './components/layout/AppLayout'
+
+// ─── Skeletons ───
 import AnalyticsSkeleton from './features/analytics/AnalyticsSkeleton'
 import FinanceReportsSkeleton from './features/finance/FinanceReportsSkeleton'
+
+// ─── Hook ───
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
+// ─── Pages (lazy) ───
 const LoginPage = lazy(() => import('./features/auth/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'))
@@ -55,20 +67,23 @@ function AppContent() {
   const [showSearch, setShowSearch] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
 
+  // ✅ Bootstrap: theme + auth + recurring
   useEffect(() => {
     initializeTheme()
     dispatch(checkAuth())
     dispatch(generateRecurringTasks())
   }, [dispatch])
 
+  // ✅ بازمحاسبه‌ی موجودی‌ها + بازمحاسبه بعد از هر sync
   useEffect(() => {
     dispatch(recalculateBalances())
-    const unsubscribe = syncService.subscribe((event: any) => {
+    const unsubscribe = syncService.subscribe((event) => {
       if (event?.status === 'synced') dispatch(recalculateBalances())
     })
     return unsubscribe
   }, [dispatch])
 
+  // ✅ شروع/توقف سینک
   useEffect(() => {
     if (isAuthenticated) syncService.start()
     else syncService.stop()
@@ -77,6 +92,7 @@ function AppContent() {
     }
   }, [isAuthenticated])
 
+  // ✅ میان‌برها
   const handleOpenSearch = useCallback(() => setShowSearch(true), [])
   const handleOpenQuickAdd = useCallback(() => setShowQuickAdd(true), [])
 
@@ -89,15 +105,15 @@ function AppContent() {
     <>
       <ThemeEffects />
 
+      {/* ═══ Suspense بیرونی — فقط برای صفحات public (login/forgot/reset) ═══ */}
       <Suspense fallback={<LoadingFallback />}>
-        {/* ✅ بدون key و بدون AnimatePresence در این لایه */}
         <Routes>
-          {/* Public */}
+          {/* ═══ Public (بدون layout) ═══ */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Protected — AppLayout ثابت، فقط Outlet عوض می‌شود */}
+          {/* ═══ Protected — همه داخل AppLayout ═══ */}
           <Route
             path="/"
             element={
@@ -149,6 +165,7 @@ function AppContent() {
 
       <InstallPrompt />
 
+      {/* ═══ مودال‌های سراسری — فقط بعد از auth ═══ */}
       {isAuthenticated && (
         <>
           <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />

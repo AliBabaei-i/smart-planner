@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
@@ -16,11 +16,13 @@ import {
   FiSettings,
   FiDollarSign,
   FiGift,
-  FiTrendingUp,FiBell
+  FiTrendingUp,
+  FiBell,
 } from 'react-icons/fi'
 import LogoutButton from '../ui/LogoutButton'
 import type { RootState } from '../../app/store'
-    // import:
+
+const SCROLL_KEY = 'smart-planner-sidebar-scroll'
 
 interface MenuItem {
   path: string
@@ -37,6 +39,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
   const { t, i18n } = useTranslation()
   const location = useLocation()
+  const navRef = useRef<HTMLElement>(null)
+
   const { tasks = [] } = useSelector((s: RootState) => s.tasks)
   const achievements = useSelector(
     (s: RootState) => (s as any).achievements
@@ -78,25 +82,55 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
     },
     { path: '/rewards', label: t('nav.rewards'), Icon: FiGift },
     { path: '/finance', label: t('nav.finance'), Icon: FiDollarSign },
+    {
+      path: '/notifications',
+      label: t('nav.notifications') || 'اعلان‌ها',
+      Icon: FiBell,
+    },
     { path: '/settings', label: t('nav.settings'), Icon: FiSettings },
-
-
-// در menuItems، بعد از achievements:
-{ path: '/notifications', label: t('nav.notifications') || 'اعلان‌ها', Icon: FiBell },
   ]
 
   const isActive = (path: string) => location.pathname === path
-  const handleClick = () => onItemClick?.()
+
+  // ✅ بازیابی اسکرول هنگام mount
+  useEffect(() => {
+    if (!navRef.current) return
+    const saved = parseInt(sessionStorage.getItem(SCROLL_KEY) || '0', 10)
+    if (saved > 0) {
+      // با rAF تا DOM کامل شده باشد
+      requestAnimationFrame(() => {
+        if (navRef.current) navRef.current.scrollTop = saved
+      })
+    }
+  }, [])
+
+  // ✅ ذخیره اسکرول هنگام اسکرول
+  const handleNavScroll = useCallback(() => {
+    if (navRef.current) {
+      sessionStorage.setItem(SCROLL_KEY, String(navRef.current.scrollTop))
+    }
+  }, [])
+
+  // ✅ ذخیره اسکرول قبل از ناوبری
+  const handleClick = useCallback(() => {
+    if (navRef.current) {
+      sessionStorage.setItem(SCROLL_KEY, String(navRef.current.scrollTop))
+    }
+    onItemClick?.()
+  }, [onItemClick])
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 h-full flex flex-col">
-      <nav className="flex-1 overflow-y-auto scrollbar-thin">
+      <nav
+        ref={navRef}
+        onScroll={handleNavScroll}
+        className="flex-1 overflow-y-auto scrollbar-thin"
+      >
         <div className="p-4">
           <ul className="space-y-1">
             {menuItems.map((item) => {
               const active = isActive(item.path)
               const IconComponent = item.Icon
-
               return (
                 <li key={item.path}>
                   <Link
@@ -131,7 +165,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
                         )}
                       </div>
                     </div>
-
                     {item.badge !== undefined && item.badge > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-4 px-1.5 flex items-center justify-center font-bold flex-shrink-0">
                         {item.badge > 9 ? '9+' : item.badge}
