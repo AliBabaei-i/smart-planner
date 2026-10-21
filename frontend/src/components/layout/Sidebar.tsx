@@ -16,10 +16,11 @@ import {
   FiSettings,
   FiDollarSign,
   FiGift,
-  FiTrendingUp,
+  FiTrendingUp,FiBell
 } from 'react-icons/fi'
 import LogoutButton from '../ui/LogoutButton'
 import type { RootState } from '../../app/store'
+    // import:
 
 interface MenuItem {
   path: string
@@ -78,6 +79,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
     { path: '/rewards', label: t('nav.rewards'), Icon: FiGift },
     { path: '/finance', label: t('nav.finance'), Icon: FiDollarSign },
     { path: '/settings', label: t('nav.settings'), Icon: FiSettings },
+
+
+// در menuItems، بعد از achievements:
+{ path: '/notifications', label: t('nav.notifications') || 'اعلان‌ها', Icon: FiBell },
   ]
 
   const isActive = (path: string) => location.pathname === path

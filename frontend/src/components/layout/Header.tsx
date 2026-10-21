@@ -9,11 +9,12 @@ import {
   FiTrendingUp,
   FiPlus,
 } from 'react-icons/fi'
-import Notifications from '../../features/notifications/Notifications'
+
 import ThemeToggle from '../../features/theme/ThemeToggle'
 import LanguageSwitcher from '../common/LanguageSwitcher'
 import SyncIndicator from '../sync/SyncIndicator'
 import type { RootState } from '../../app/store'
+import NotificationBell from '../sync/NotificationBell'
 
 interface HeaderProps {
   onOpenSearch: () => void
@@ -114,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({
             <LanguageSwitcher />
             <SyncIndicator />
             <ThemeToggle />
-            <Notifications />
+            <NotificationBell />
           </div>
         </div>
       </div>

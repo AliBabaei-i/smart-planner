@@ -31,6 +31,7 @@ import FinanceReportsSkeleton from './features/finance/FinanceReportsSkeleton'
 
 // ─── Hooks ───
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
+import NotificationsPage from './features/notifications/NotificationsPage'
 
 // ─── Pages (lazy) ───
 const LoginPage = lazy(() => import('./features/auth/LoginPage'))
@@ -274,7 +275,14 @@ function AppContent() {
                 }
               />
             </Route>
-
+            <Route
+              path="notifications"
+              element={
+                <PageTransition>
+                  <NotificationsPage />
+                </PageTransition>
+              }
+            />
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
