@@ -50,6 +50,8 @@ import {
 } from '../../utils/dataExport'
 import { syncApi } from '../../services/syncApi'
 import { syncQueue, lastSync } from '../../services/syncQueue'
+import BackupRestorePanel from './BackupRestorePanel'
+import ImportPanel from './ImportPanel'
 
 // ═══════════════════════════════════════════════
 // ✅ Type definitions
@@ -478,7 +480,8 @@ const SettingsPage: React.FC = () => {
               <GuideRow Icon={FiInfo} color="text-yellow-600" title={t('settings.data.guide.warning')} desc={t('settings.data.guide.warningDesc')} />
             </div>
           </Card>
-
+<BackupRestorePanel />
+<ImportPanel />
           <DangerZone />
         </div>
       )}

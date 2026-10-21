@@ -53,6 +53,7 @@ import BalanceWidget from '../finance/BalanceWidget.tsx'
 import MonthlyBudgetWidget from '../finance/MonthlyBudgetWidget'
 import KhumsWidget from '../finance/KhumsWidget'
 import RecentTransactionsWidget from '../finance/RecentTransactionsWidget'
+import AISuggestionsWidget from './widgets/AISuggestionsWidget.tsx'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -72,6 +73,7 @@ const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
   monthlyBudget: MonthlyBudgetWidget,
   khums: KhumsWidget,
   recentTransactions: RecentTransactionsWidget,
+  aiSuggestions: AISuggestionsWidget,
 }
 
 // ═══════════════════════════════════════════════

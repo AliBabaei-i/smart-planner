@@ -75,7 +75,8 @@
             "financeBalance": "Finance Balance",
             "monthlyBudget": "Monthly Budget",
             "khums": "Khums",
-            "recentTransactions": "Recent Transactions"
+            "recentTransactions": "Recent Transactions","aiSuggestions": "AI Suggestions"
+            
         }
     },
     "widgets": {

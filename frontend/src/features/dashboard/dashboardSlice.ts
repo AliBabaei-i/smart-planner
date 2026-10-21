@@ -6,7 +6,7 @@ export type WidgetId =
   | 'productivityScore' | 'stats' | 'todayTasks' | 'quickActions'
   | 'pomodoro' | 'recentTasks' | 'upcomingDeadlines' | 'notes'
   | 'projectProgress' | 'productivity' | 'tags'
-  | 'financeBalance' | 'monthlyBudget' | 'khums' | 'recentTransactions'
+  | 'financeBalance' | 'monthlyBudget' | 'khums' | 'recentTransactions' | 'aiSuggestions'
 
 export interface WidgetMeta {
   titleKey: string
@@ -37,20 +37,21 @@ export const CURRENT_LAYOUT_VERSION = 3
 
 export const WIDGETS: Record<WidgetId, WidgetMeta> = {
   productivityScore: { titleKey: 'dashboard.widgets.productivityScore', minW: 1, minH: 3 },
-  stats:             { titleKey: 'dashboard.widgets.stats',             minW: 2, minH: 1 },
-  todayTasks:        { titleKey: 'dashboard.widgets.todayTasks',        minW: 1, minH: 3 },
-  quickActions:      { titleKey: 'dashboard.widgets.quickActions',      minW: 1, minH: 2 },
-  pomodoro:          { titleKey: 'dashboard.widgets.pomodoro',          minW: 1, minH: 2 },
-  recentTasks:       { titleKey: 'dashboard.widgets.recentTasks',       minW: 1, minH: 2 },
+  stats: { titleKey: 'dashboard.widgets.stats', minW: 2, minH: 1 },
+  todayTasks: { titleKey: 'dashboard.widgets.todayTasks', minW: 1, minH: 3 },
+  quickActions: { titleKey: 'dashboard.widgets.quickActions', minW: 1, minH: 2 },
+  pomodoro: { titleKey: 'dashboard.widgets.pomodoro', minW: 1, minH: 2 },
+  recentTasks: { titleKey: 'dashboard.widgets.recentTasks', minW: 1, minH: 2 },
   upcomingDeadlines: { titleKey: 'dashboard.widgets.upcomingDeadlines', minW: 1, minH: 2 },
-  notes:             { titleKey: 'dashboard.widgets.notes',             minW: 1, minH: 2 },
-  projectProgress:   { titleKey: 'dashboard.widgets.projectProgress',   minW: 1, minH: 2 },
-  productivity:      { titleKey: 'dashboard.widgets.productivity',      minW: 1, minH: 2 },
-  tags:              { titleKey: 'dashboard.widgets.tags',              minW: 1, minH: 2 },
-  financeBalance:    { titleKey: 'dashboard.widgets.financeBalance',    minW: 1, minH: 2 },
-  monthlyBudget:     { titleKey: 'dashboard.widgets.monthlyBudget',     minW: 1, minH: 2 },
-  khums:             { titleKey: 'dashboard.widgets.khums',             minW: 1, minH: 2 },
-  recentTransactions:{ titleKey: 'dashboard.widgets.recentTransactions',minW: 1, minH: 2 },
+  notes: { titleKey: 'dashboard.widgets.notes', minW: 1, minH: 2 },
+  projectProgress: { titleKey: 'dashboard.widgets.projectProgress', minW: 1, minH: 2 },
+  productivity: { titleKey: 'dashboard.widgets.productivity', minW: 1, minH: 2 },
+  tags: { titleKey: 'dashboard.widgets.tags', minW: 1, minH: 2 },
+  financeBalance: { titleKey: 'dashboard.widgets.financeBalance', minW: 1, minH: 2 },
+  monthlyBudget: { titleKey: 'dashboard.widgets.monthlyBudget', minW: 1, minH: 2 },
+  khums: { titleKey: 'dashboard.widgets.khums', minW: 1, minH: 2 },
+  recentTransactions: { titleKey: 'dashboard.widgets.recentTransactions', minW: 1, minH: 2 },
+  aiSuggestions: { titleKey: 'dashboard.widgets.aiSuggestions', minW: 1, minH: 2 },
 }
 
 // ═══════════════════════════════════════════════
@@ -58,28 +59,28 @@ export const WIDGETS: Record<WidgetId, WidgetMeta> = {
 // ═══════════════════════════════════════════════
 export const BEAUTIFUL_DEFAULT_LAYOUT: WidgetConfig[] = [
   // ردیف ۱: KPI تمام‌عرض
-  { id: 'stats',              x: 0, y: 0,  w: 4, h: 2, minW: 2, minH: 1, visible: true },
-
+  { id: 'stats', x: 0, y: 0, w: 4, h: 2, minW: 2, minH: 1, visible: true },
+  { id: 'aiSuggestions', x: 3, y: 11, w: 1, h: 2, minW: 1, minH: 2, visible: true },
   // ردیف ۲-۴: ۳ ویجت اصلی
-  { id: 'productivityScore',  x: 0, y: 2,  w: 1, h: 3, minW: 1, minH: 3, visible: true },
-  { id: 'todayTasks',         x: 1, y: 2,  w: 1, h: 3, minW: 1, minH: 3, visible: true },
-  { id: 'productivity',       x: 2, y: 2,  w: 2, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'productivityScore', x: 0, y: 2, w: 1, h: 3, minW: 1, minH: 3, visible: true },
+  { id: 'todayTasks', x: 1, y: 2, w: 1, h: 3, minW: 1, minH: 3, visible: true },
+  { id: 'productivity', x: 2, y: 2, w: 2, h: 2, minW: 1, minH: 2, visible: true },
 
   // ردیف ۴-۵
-  { id: 'quickActions',       x: 2, y: 4,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'pomodoro',           x: 3, y: 4,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'upcomingDeadlines',  x: 0, y: 5,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'recentTasks',        x: 1, y: 5,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'quickActions', x: 2, y: 4, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'pomodoro', x: 3, y: 4, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'upcomingDeadlines', x: 0, y: 5, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'recentTasks', x: 1, y: 5, w: 1, h: 2, minW: 1, minH: 2, visible: true },
 
   // ردیف ۷-۸
-  { id: 'projectProgress',    x: 0, y: 7,  w: 2, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'notes',              x: 2, y: 7,  w: 2, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'projectProgress', x: 0, y: 7, w: 2, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'notes', x: 2, y: 7, w: 2, h: 2, minW: 1, minH: 2, visible: true },
 
   // ردیف ۹-۱۰: مالی و برچسب
-  { id: 'financeBalance',     x: 0, y: 9,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'monthlyBudget',      x: 1, y: 9,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'khums',              x: 2, y: 9,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
-  { id: 'tags',               x: 3, y: 9,  w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'financeBalance', x: 0, y: 9, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'monthlyBudget', x: 1, y: 9, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'khums', x: 2, y: 9, w: 1, h: 2, minW: 1, minH: 2, visible: true },
+  { id: 'tags', x: 3, y: 9, w: 1, h: 2, minW: 1, minH: 2, visible: true },
 
   // ردیف ۱۱: تمام‌عرض
   { id: 'recentTransactions', x: 0, y: 11, w: 4, h: 2, minW: 1, minH: 2, visible: true },

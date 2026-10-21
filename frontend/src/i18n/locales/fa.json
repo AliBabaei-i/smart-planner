@@ -75,7 +75,7 @@
             "financeBalance": "موجودی مالی",
             "monthlyBudget": "بودجه ماه",
             "khums": "خمس",
-            "recentTransactions": "تراکنش‌های اخیر"
+            "recentTransactions": "تراکنش‌های اخیر","aiSuggestions": "پیشنهادهای هوشمند"
         }
     },
     "widgets": {
@@ -1140,7 +1140,6 @@
             "unread": "خوانده‌نشده",
             "read": "خوانده‌شده"
         },
-        
         "welcome": "به برنامه‌ریزی هوشمند خوش آمدید!",
         "taskReminder": "یادآوری کار",
         "dueSoon": "موعد انجام نزدیک است",
