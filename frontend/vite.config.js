@@ -69,7 +69,6 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              // ✅ CDN فونت وزیرمتن (jsdelivr)
               urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
               handler: 'CacheFirst',
               options: {
@@ -79,7 +78,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-        // ✅ حیاتی: در dev غیرفعال کن — برای تست SW از preview استفاده کن
+        // ✅ حیاتی: در dev غیرفعال
         devOptions: {
           enabled: false,
         },
@@ -97,9 +96,15 @@ export default defineConfig(({ mode }) => {
 
     server: {
       port: 5173,
-      open: true,
-      host: true,
-      strictPort: false,
+      strictPort: true, // ✅ مهم: اگر 5173 گرفت، fail کن — نه port بعدی
+      open: false,      // ✅ خودت مرورگر باز کن (تضمین می‌کنی که WS بالا آمده)
+      host: 'localhost', // ✅ به جای true — Firefox با localhost راحت‌تر است
+      // ✅ HMR fix برای Firefox
+      hmr: {
+        host: 'localhost',
+        port: 5173,
+        protocol: 'ws',
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:4000',
@@ -110,7 +115,8 @@ export default defineConfig(({ mode }) => {
 
     preview: {
       port: 4173,
-      host: true,
+      host: 'localhost',
+      strictPort: true,
     },
 
     build: {

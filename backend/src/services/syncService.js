@@ -3,7 +3,12 @@ import { SYNC_ENTITIES } from '../config/syncEntities.js'
 import logger from '../utils/logger.js'
 
 // ═══════════════════════════════════════════════
-// ✅ Helper: Normalize data before DB write
+// ✅ snake_case → camelCase
+// ═══════════════════════════════════════════════
+const toCamel = (str) => str.replace(/_([a-z])/g, (_, l) => l.toUpperCase())
+
+// ═══════════════════════════════════════════════
+// ✅ Normalize data before DB write (camelCase → snake_case)
 // ═══════════════════════════════════════════════
 const normalizeForDb = (entityConfig, data) => {
   const result = {}
@@ -11,9 +16,9 @@ const normalizeForDb = (entityConfig, data) => {
   for (const col of entityConfig.columns) {
     let value = data[col]
 
-    // ✅ اگه نبود، camelCase رو امتحان کن
+    // اگه نبود، camelCase رو امتحان کن
     if (value === undefined) {
-      const camelKey = col.replace(/_([a-z])/g, (_, l) => l.toUpperCase())
+      const camelKey = toCamel(col)
       value = data[camelKey]
     }
 
@@ -28,27 +33,47 @@ const normalizeForDb = (entityConfig, data) => {
     result[col] = value
   }
 
+  // ✅ DEFENSIVE: created_at و updated_at هرگز null نباشند
+  const now = new Date().toISOString()
+  if (entityConfig.columns.includes('created_at') && !result.created_at) {
+    result.created_at = result.updated_at || now
+  }
+  if (entityConfig.columns.includes('updated_at') && !result.updated_at) {
+    result.updated_at = now
+  }
+
   return result
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Helper: Normalize from DB to client format
+// ✅ Normalize from DB to client (snake_case → camelCase)
 // ═══════════════════════════════════════════════
 const normalizeFromDb = (entityConfig, row) => {
-  const result = { ...row }
+  const result = {}
 
-  for (const col of entityConfig.jsonColumns) {
-    if (result[col]) {
-      try {
-        result[col] = JSON.parse(result[col])
-      } catch {
-        result[col] = []
+  for (const col of entityConfig.columns) {
+    const camelKey = toCamel(col)
+    let value = row[col]
+
+    // JSON columns
+    if (entityConfig.jsonColumns.includes(col)) {
+      if (value) {
+        try {
+          value = JSON.parse(value)
+        } catch {
+          value = []
+        }
+      } else {
+        value = []
       }
     }
-  }
 
-  for (const col of entityConfig.booleanColumns) {
-    result[col] = !!result[col]
+    // Boolean columns
+    if (entityConfig.booleanColumns.includes(col)) {
+      value = !!value
+    }
+
+    result[camelKey] = value
   }
 
   return result
@@ -69,16 +94,11 @@ const REQUIRED_FIELDS = {
   financeTransactions: ['account_id', 'type', 'amount'],
   financePlans: ['title', 'total_amount'],
   financePlanDues: ['plan_id', 'due_index'],
-  financeBudgets: ['category', 'amount']
+  financeBudgets: ['category', 'amount'],
 }
 
-// ═══════════════════════════════════════════════
-// ✅ اعتبارسنجی (فقط برای NON-DELETE)
-// ═══════════════════════════════════════════════
 const validateEntity = (entityName, normalized) => {
-  // ✅ اگه soft delete هست، validation نکن
   if (normalized.deleted_at) return null
-
   const required = REQUIRED_FIELDS[entityName] || []
   for (const field of required) {
     const val = normalized[field]
@@ -103,35 +123,25 @@ const upsertEntity = (userId, entityName, data) => {
 
   const isDelete = !!normalized.deleted_at
 
-  // ═════════════════════════════════════════════
-  // ✅ حالت DELETE (Soft Delete) — فقط deleted_at و updated_at رو ست کن
-  // ═════════════════════════════════════════════
+  // ─── DELETE (Soft Delete) ───
   if (isDelete) {
-    // چک کن ردیف وجود داره
     const existing = get(
       `SELECT id FROM ${config.table} WHERE id = ? AND user_id = ?`,
       [normalized.id, userId]
     )
-
     if (!existing) {
-      // ✅ ردیف وجود نداره — چیز خاصی برای delete نیست
       return { success: true, changes: 0, note: 'delete-noop' }
     }
-
-    // ✅ فقط ستون‌های delete رو update کن
     const result = run(
       `UPDATE ${config.table}
        SET deleted_at = ?, updated_at = ?
        WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
       [normalized.deleted_at, normalized.updated_at, normalized.id, userId]
     )
-
     return { success: true, changes: result.changes }
   }
 
-  // ═════════════════════════════════════════════
-  // ✅ حالت UPSERT (Insert / Update)
-  // ═════════════════════════════════════════════
+  // ─── UPSERT ───
   const validationError = validateEntity(entityName, normalized)
   if (validationError) {
     return { success: false, error: validationError, skipped: true }
@@ -140,8 +150,8 @@ const upsertEntity = (userId, entityName, data) => {
   const columns = ['user_id', ...config.columns]
   const placeholders = columns.map(() => '?').join(', ')
   const updateClauses = config.columns
-    .filter(c => c !== 'id')
-    .map(c => `${c} = excluded.${c}`)
+    .filter((c) => c !== 'id')
+    .map((c) => `${c} = excluded.${c}`)
     .join(', ')
 
   const sql = `
@@ -152,7 +162,7 @@ const upsertEntity = (userId, entityName, data) => {
     WHERE excluded.updated_at > ${config.table}.updated_at
   `
 
-  const values = columns.map(col => normalized[col])
+  const values = columns.map((col) => normalized[col])
 
   try {
     const result = run(sql, values)
@@ -164,20 +174,14 @@ const upsertEntity = (userId, entityName, data) => {
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Push changes از client
+// ✅ Push
 // ═══════════════════════════════════════════════
 export const pushChanges = (userId, changes) => {
-  const results = {
-    applied: 0,
-    conflicts: 0,
-    skipped: 0,
-    errors: []
-  }
+  const results = { applied: 0, conflicts: 0, skipped: 0, errors: [] }
 
   transaction(() => {
     for (const change of changes) {
       const { entity, data } = change
-
       try {
         const result = upsertEntity(userId, entity, data)
         if (result.success) {
@@ -203,7 +207,7 @@ export const pushChanges = (userId, changes) => {
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Pull changes از server
+// ✅ Pull
 // ═══════════════════════════════════════════════
 export const pullChanges = (userId, since = null) => {
   const sinceTime = since || '1970-01-01T00:00:00.000Z'
@@ -214,47 +218,39 @@ export const pullChanges = (userId, since = null) => {
     try {
       const rows = all(
         `SELECT * FROM ${config.table}
-         WHERE user_id = ?
-         AND updated_at > ?
+         WHERE user_id = ? AND updated_at > ?
          ORDER BY updated_at ASC`,
         [userId, sinceTime]
       )
-
-      entities[entityName] = rows.map(row => normalizeFromDb(config, row))
+      entities[entityName] = rows.map((row) => normalizeFromDb(config, row))
     } catch (error) {
       logger.error(`Pull failed for ${entityName}:`, error.message)
       entities[entityName] = []
     }
   }
 
-  return {
-    serverTime,
-    entities
-  }
+  return { serverTime, entities }
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Full Sync (Push + Pull)
+// ✅ Full Sync
 // ═══════════════════════════════════════════════
 export const fullSync = (userId, changes, since) => {
-  const pushResult = changes && changes.length > 0
-    ? pushChanges(userId, changes)
-    : { applied: 0, conflicts: 0, skipped: 0, errors: [] }
+  const pushResult =
+    changes && changes.length > 0
+      ? pushChanges(userId, changes)
+      : { applied: 0, conflicts: 0, skipped: 0, errors: [] }
 
   const pullResult = pullChanges(userId, since)
 
-  return {
-    push: pushResult,
-    pull: pullResult
-  }
+  return { push: pushResult, pull: pullResult }
 }
 
 // ═══════════════════════════════════════════════
-// ✅ Reset — Soft Delete همه یا یک entity
+// ✅ Reset
 // ═══════════════════════════════════════════════
 export const resetUserData = (userId, entityName = null) => {
   const results = {}
-
   const entitiesToReset = entityName
     ? { [entityName]: SYNC_ENTITIES[entityName] }
     : SYNC_ENTITIES
@@ -285,9 +281,4 @@ export const resetUserData = (userId, entityName = null) => {
   return results
 }
 
-export default {
-  pushChanges,
-  pullChanges,
-  fullSync,
-  resetUserData
-}
+export default { pushChanges, pullChanges, fullSync, resetUserData }

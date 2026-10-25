@@ -46,6 +46,7 @@ const getEntitiesFromState = (state: any, entityName: string): any[] => {
   return Array.isArray(current) ? current : []
 }
 
+// ✅ defensive: created_at هرگز جا نیفتد
 const filterFields = (obj: any, fields: string[]): any => {
   const result: any = {}
   for (const field of fields) {
@@ -54,8 +55,12 @@ const filterFields = (obj: any, fields: string[]): any => {
     }
   }
   if (!result.id) result.id = obj.id
+  if (!result.createdAt) {
+    result.createdAt =
+      obj.createdAt || obj.created_at || obj.updatedAt || new Date().toISOString()
+  }
   if (!result.updatedAt) {
-    result.updatedAt = obj.updatedAt || new Date().toISOString()
+    result.updatedAt = obj.updatedAt || obj.updated_at || new Date().toISOString()
   }
   return result
 }
