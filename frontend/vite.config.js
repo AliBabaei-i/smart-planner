@@ -11,115 +11,108 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+        injectRegister: 'auto',
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
-          name: 'Smart Planner',
+          name: 'Smart Planner — برنامه‌ریزی هوشمند',
           short_name: 'Planner',
-          description: 'برنامه‌ریزی هوشمند - مدیریت کارها، پروژه‌ها و مالی',
-          theme_color: '#3b82f6', // ✅ رنگ آبی پیش‌فرض
+          description: 'مدیریت کارها، پروژه‌ها، مالی و رشد شخصی — آفلاین و چنددستگاهی',
+          theme_color: '#3b82f6',
           background_color: '#ffffff',
           display: 'standalone',
+          display_override: ['window-controls-overlay', 'standalone'],
           orientation: 'portrait',
           start_url: '/',
           scope: '/',
+          lang: 'fa',
+          dir: 'rtl',
+          categories: ['productivity', 'lifestyle', 'utilities'],
           icons: [
+            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+          shortcuts: [
+            { name: 'کارها', url: '/tasks', description: 'مشاهده کارها' },
+            { name: 'برنامه‌ریزی', url: '/planning', description: 'برنامه هفتگی' },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          runtimeCaching: [
             {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
+              urlPattern: /\/api\/auth\/(signin|signup|refresh|forgot|reset).*/i,
+              handler: 'NetworkOnly',
             },
             {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
+              urlPattern: /\/api\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                networkTimeoutSeconds: 5,
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
             },
             {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
-            }
-          ]
+              urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts',
+                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+            {
+              // ✅ CDN فونت وزیرمتن (jsdelivr)
+              urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'cdn-assets',
+                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+          ],
         },
-       workbox: {
-  // ✅ فایل‌هایی که باید cache بشن
-  globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
-
-  // ✅ حیاتی: همه‌ی ناوبری‌های SPA به index.html برگردند
-  // بدون این خط، /tasks و /projects در حالت آفلاین کار نمی‌کنند
-  navigateFallback: '/index.html',
-
-  // ✅ اما API نباید به index.html برگردد
-  navigateFallbackDenylist: [/^\/api\//],
-
-  cleanupOutdatedCaches: true,
-  clientsClaim: true,
-  skipWaiting: true,
-
-  runtimeCaching: [
-    // ─── Auth endpoints: همیشه شبکه (login/reset نیاز به سرور زنده) ───
-    {
-      urlPattern: /\/api\/auth\/(signin|signup|refresh|forgot|reset).*/i,
-      handler: 'NetworkOnly',
-    },
-    // ─── بقیه API: اول شبکه، بعد کش ───
-    {
-      urlPattern: /\/api\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'api-cache',
-        networkTimeoutSeconds: 5,
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24, // 24 ساعت
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-    // ─── Google Fonts ───
-    {
-      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'google-fonts',
-        expiration: {
-          maxEntries: 20,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 سال
-        },
-      },
-    },
-  ],
-},
+        // ✅ حیاتی: در dev غیرفعال کن — برای تست SW از preview استفاده کن
         devOptions: {
-          enabled: true,
-          type: 'module'
-        }
-      })
+          enabled: false,
+        },
+      }),
     ],
-    
+
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
-      dedupe: ['react', 'react-dom']
+      dedupe: ['react', 'react-dom'],
     },
-    
+
     base: isMobile ? './' : '/',
-    
+
     server: {
       port: 5173,
       open: true,
       host: true,
       strictPort: false,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+        },
+      },
     },
-    
+
     preview: {
       port: 4173,
       host: true,
     },
-    
+
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
@@ -137,11 +130,11 @@ export default defineConfig(({ mode }) => {
             'i18n-vendor': ['i18next', 'react-i18next'],
             'ui-vendor': ['react-icons', 'react-toastify'],
             'utils-vendor': ['date-fns', 'uuid', 'jalaali-js'],
-          }
-        }
-      }
+          },
+        },
+      },
     },
-    
+
     optimizeDeps: {
       include: [
         'react',
@@ -158,11 +151,11 @@ export default defineConfig(({ mode }) => {
         '@capacitor/local-notifications',
         '@capacitor/preferences',
         '@capacitor/status-bar',
-      ]
+      ],
     },
-    
+
     define: {
       __IS_MOBILE__: JSON.stringify(isMobile),
-    }
+    },
   }
 })
